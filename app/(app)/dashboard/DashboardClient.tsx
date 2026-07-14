@@ -18,24 +18,42 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   const [duration, setDuration] = React.useState<number | null>(targetDuration)
   const [showConfirm, setShowConfirm] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [confirmError, setConfirmError] = React.useState<string | null>(null)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
 
+  const openConfirm = () => {
+    setConfirmError(null)
+    setShowConfirm(true)
+  }
+
+  const closeConfirm = () => {
+    setConfirmError(null)
+    setShowConfirm(false)
+  }
+
   const handleConfirm = async () => {
     setIsSubmitting(true)
+    setConfirmError(null)
     if (isFasting && startTime && targetDuration && activeFastId) {
       const outcome = computeStopOutcome(startTime, targetDuration, new Date())
-      if (outcome.action === 'discard') {
-        await cancelFastingLog(activeFastId)
-      } else {
-        await updateFastingLog(activeFastId, outcome.status)
+      const result = outcome.action === 'discard'
+        ? await cancelFastingLog(activeFastId)
+        : await updateFastingLog(activeFastId, outcome.status)
+      if (!result.success) {
+        setConfirmError(result.error)
+        setIsSubmitting(false)
+        return
       }
       stopFast()
     } else if (duration) {
       const result = await startFastingLog(duration)
-      if ('data' in result && result.data) {
-        startFast(duration, result.data.id, new Date(result.data.start_time))
+      if (!result.success) {
+        setConfirmError(result.error)
+        setIsSubmitting(false)
+        return
       }
+      startFast(duration, result.data.id, new Date(result.data.start_time))
     }
     setIsSubmitting(false)
     setShowConfirm(false)
@@ -60,7 +78,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         )}
 
         <button
-          onClick={() => setShowConfirm(true)}
+          onClick={openConfirm}
           disabled={!isFasting && !duration}
           className="w-24 h-24 rounded-full bg-primary-container text-on-primary-container flex flex-col items-center justify-center shadow-float animate-pulse-glow hover:scale-105 active:scale-95 transition-transform duration-300 ease-glide disabled:opacity-50 disabled:animate-none"
         >
@@ -69,13 +87,16 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         </button>
       </main>
 
-      <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title={isFasting ? 'Stop Fasting' : 'Start Fasting'}>
+      <Modal isOpen={showConfirm} onClose={closeConfirm} title={isFasting ? 'Stop Fasting' : 'Start Fasting'}>
         <p className="font-body-md text-body-md text-on-surface mb-6">
           Are you sure you want to {isFasting ? 'stop your current fast' : `start a ${duration}h fast`}?
         </p>
+        {confirmError && (
+          <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
+        )}
         <div className="flex gap-3">
           <button
-            onClick={() => setShowConfirm(false)}
+            onClick={closeConfirm}
             disabled={isSubmitting}
             className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
           >
