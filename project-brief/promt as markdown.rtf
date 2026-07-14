@@ -1,0 +1,55 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 # \uc0\u55356 \u57100  Coding Prompt: Implementing the "Antigravity" Design System\
+\
+**System Instructions for AI Coding Assistant:**\
+You are an expert Frontend Developer specializing in Next.js 15, React, and Tailwind CSS. Your task is to generate the foundational configuration files and core React components required to implement the "Antigravity" Design System for a mobile-first Intermittent Fasting PWA[span_0](start_span)[span_0](end_span).\
+\
+---\
+\
+## \uc0\u55356 \u57256  1. Design System Specifications \
+The Antigravity system represents a paradigm shift toward visual weightlessness, organic colors, and fluid micro-animations[span_1](start_span)[span_1](end_span). Do not use sharp drop-shadows, pure blacks (`#000000`), pure whites (`#FFFFFF`), or harsh `1px solid` borders[span_2](start_span)[span_2](end_span).\
+\
+**Color Palette:**\
+*   **Atmosphere (Light Base):** `#F6F4F0`[span_3](start_span)[span_3](end_span)\
+*   **Void (Dark Base):** `#1A1C23`[span_4](start_span)[span_4](end_span)\
+*   **Mango (Active/Timer Accent):** `#FFB84C`[span_5](start_span)[span_5](end_span)\
+*   **Olive (Success/Streak Accent):** `#A4BE7B`[span_6](start_span)[span_6](end_span)\
+*   **Surface (Dark Mode Floating Elements):** `#2A2D35`[span_7](start_span)[span_7](end_span)\
+\
+**Physics & Animation (Low-Gravity Vacuum):**\
+*   **Float Shadow (Resting):** `0 20px 50px -10px rgba(0,0,0,0.03)`[span_8](start_span)[span_8](end_span)\
+*   **Float Shadow (Hover):** `0 30px 60px -15px rgba(0,0,0,0.05)`[span_9](start_span)[span_9](end_span)\
+*   **Glide Easing Curve:** `cubic-bezier(0.2, 0.8, 0.2, 1)`[span_10](start_span)[span_10](end_span)\
+*   **Hover Interaction:** Elements should slightly elevate (`transform: translateY(-4px) scale(1.01)`) rather than just changing color[span_11](start_span)[span_11](end_span).\
+\
+---\
+\
+## \uc0\u55357 \u56507  2. Files to Generate\
+\
+Please write the complete, production-ready code for the following three files:\
+\
+### File 1: `tailwind.config.ts`\
+*   Extend the Tailwind theme to include the custom colors (`atmosphere`, `void`, `mango`, `olive`, `surface`)[span_12](start_span)[span_12](end_span).\
+*   Add the custom `float` and `float-hover` box shadows[span_13](start_span)[span_13](end_span).\
+*   Add the custom `glide` transition timing function[span_14](start_span)[span_14](end_span).\
+*   Configure dark mode to use the `class` strategy so it can seamlessly transition between light and dark themes[span_15](start_span)[span_15](end_span).\
+\
+### File 2: `app/globals.css`\
+*   Import the Tailwind directives (`base`, `components`, `utilities`).\
+*   Apply the `atmosphere` color to the body background and set the text color for light mode[span_16](start_span)[span_16](end_span).\
+*   Apply the `void` color to the body background and set the text color for dark mode[span_17](start_span)[span_17](end_span).\
+*   Remove default browser outlines, tap-highlight colors, and scrollbars to maintain the frictionless, native-app feel[span_18](start_span)[span_18](end_span).\
+\
+### File 3: `components/ui/FloatingCard.tsx`\
+*   Create a reusable Next.js/React wrapper component that embodies the core Antigravity principles[span_19](start_span)[span_19](end_span).\
+*   **Requirements:**\
+    *   It must rely entirely on subtle background color shifts and negative space (padding/margins), completely eliminating standard borders[span_20](start_span)[span_20](end_span).\
+    *   It should apply the resting `float` shadow and smoothly transition using the `glide` easing curve[span_21](start_span)[span_21](end_span).\
+    *   On hover, it must execute the elevation transform (`translateY(-4px) scale(1.01)`) and apply the `float-hover` shadow[span_22](start_span)[span_22](end_span).\
+    *   It must adapt correctly to dark mode, using the `surface` color for its background illumination[span_23](start_span)[span_23](end_span).}
