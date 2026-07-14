@@ -35,10 +35,13 @@ export async function startFastingLog(targetDurationHours: number) {
 
 export async function updateFastingLog(id: string, status: 'completed' | 'missed') {
   const supabase = await getServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
   const { error } = await supabase.from('fasting_logs').update({
     status,
     end_time: new Date().toISOString()
-  }).eq('id', id)
+  }).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath('/dashboard', 'layout')
@@ -47,7 +50,10 @@ export async function updateFastingLog(id: string, status: 'completed' | 'missed
 
 export async function cancelFastingLog(id: string) {
   const supabase = await getServerSupabase()
-  const { error } = await supabase.from('fasting_logs').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase.from('fasting_logs').delete().eq('id', id).eq('user_id', user.id)
   if (error) return { error: error.message }
   revalidatePath('/dashboard', 'layout')
   return { success: true as const }
