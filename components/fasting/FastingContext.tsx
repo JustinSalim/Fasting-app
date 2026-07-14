@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState } from 'react'
 
 type FastingContextType = {
   isFasting: boolean
@@ -18,13 +18,19 @@ export function FastingProvider({ children, initialFast }: { children: React.Rea
   const [isFasting, setIsFasting] = useState(!!initialFast)
   const [startTime, setStartTime] = useState<Date | null>(initialFast ? new Date(initialFast.start_time) : null)
   const [targetDuration, setTargetDuration] = useState<number | null>(initialFast?.target_duration_hours || null)
+  const [prevInitialFast, setPrevInitialFast] = useState(initialFast)
 
-  useEffect(() => {
+  // Re-sync local state from `initialFast` when the prop reference changes (e.g. server
+  // revalidation), without clobbering optimistic updates from startFast/stopFast in between.
+  // This is the React-docs "adjusting state when a prop changes" pattern: compute during
+  // render instead of in a useEffect, so it doesn't trigger an extra commit/cascading render.
+  if (initialFast !== prevInitialFast) {
+    setPrevInitialFast(initialFast)
     setIsFasting(!!initialFast)
     setActiveFastId(initialFast?.id || null)
     setStartTime(initialFast ? new Date(initialFast.start_time) : null)
     setTargetDuration(initialFast?.target_duration_hours || null)
-  }, [initialFast])
+  }
 
   const startFast = (targetHours: number, id: string, start: Date) => {
     setIsFasting(true)

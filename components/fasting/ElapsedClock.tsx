@@ -14,17 +14,15 @@ export function ElapsedClock({ isFasting, startTime }: ElapsedClockProps) {
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0)
 
   React.useEffect(() => {
-    if (!isFasting || !startTime) {
-      setElapsedSeconds(0)
-      return
-    }
+    if (!isFasting || !startTime) return
     const tick = () => setElapsedSeconds(differenceInSeconds(new Date(), startTime))
     tick()
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
   }, [isFasting, startTime])
 
-  const stage = getFastingStage(elapsedSeconds / 3600)
+  const displaySeconds = isFasting && startTime ? elapsedSeconds : 0
+  const stage = getFastingStage(displaySeconds / 3600)
 
   return (
     <div className="relative w-full aspect-square max-w-[320px] rounded-full flex flex-col items-center justify-center shadow-float bg-surface/50 backdrop-blur-md animate-float">
@@ -33,7 +31,7 @@ export function ElapsedClock({ isFasting, startTime }: ElapsedClockProps) {
         {isFasting ? 'CURRENT FAST' : 'READY TO FAST'}
       </div>
       <div className="font-display-clock text-display-clock text-primary tracking-tighter leading-none mb-1">
-        {formatElapsed(elapsedSeconds)}
+        {formatElapsed(displaySeconds)}
       </div>
       {isFasting && (
         <div className="flex items-center gap-2 mt-4 bg-secondary-container/30 px-4 py-1.5 rounded-full">
