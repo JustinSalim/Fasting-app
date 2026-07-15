@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatElapsed, getFastingStage, computeStopOutcome } from './fasting'
+import { formatElapsed, getFastingStage, computeStopOutcome, getRemainingSeconds } from './fasting'
 
 describe('formatElapsed', () => {
   it('formats seconds under an hour', () => {
@@ -54,5 +54,21 @@ describe('computeStopOutcome', () => {
   it('respects a custom threshold', () => {
     const now = new Date('2026-07-15T08:02:00.000Z') // 2 minutes elapsed
     expect(computeStopOutcome(start, 16, now, 1)).toEqual({ action: 'save', status: 'missed' })
+  })
+})
+
+describe('getRemainingSeconds', () => {
+  it('returns positive seconds remaining before the goal', () => {
+    // 16h target, 2h elapsed -> 14h remaining
+    expect(getRemainingSeconds(16, 2 * 3600)).toBe(14 * 3600)
+  })
+
+  it('returns exactly zero at the goal', () => {
+    expect(getRemainingSeconds(1, 3600)).toBe(0)
+  })
+
+  it('returns negative seconds once past the goal (overtime)', () => {
+    // 1h target, 1h01m elapsed -> 60s overtime
+    expect(getRemainingSeconds(1, 3660)).toBe(-60)
   })
 })

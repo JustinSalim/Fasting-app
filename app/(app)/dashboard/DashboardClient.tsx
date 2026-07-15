@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Bell, Play, Square } from 'lucide-react'
 import { useFasting } from '@/components/fasting/FastingContext'
 import { DurationSelector } from '@/components/fasting/DurationSelector'
-import { ElapsedClock } from '@/components/fasting/ElapsedClock'
+import { FastingClock } from '@/components/fasting/FastingClock'
 import { Modal } from '@/components/ui/Modal'
 import { startFastingLog, updateFastingLog, cancelFastingLog } from '@/app/actions/fasting'
 import { computeStopOutcome } from '@/lib/fasting'
@@ -71,7 +71,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
-        <ElapsedClock isFasting={isFasting} startTime={startTime} />
+        <FastingClock isFasting={isFasting} startTime={startTime} targetDuration={targetDuration} />
 
         {!isFasting && (
           <DurationSelector duration={duration} setDuration={setDuration} />

@@ -10,6 +10,10 @@ export function getFastingStage(elapsedHours: number): 'fasting' | 'fat_burning'
   return elapsedHours >= 12 ? 'fat_burning' : 'fasting'
 }
 
+export function getRemainingSeconds(targetHours: number, elapsedSeconds: number): number {
+  return targetHours * 3600 - elapsedSeconds
+}
+
 export function computeStopOutcome(
   startTime: Date,
   targetHours: number,
