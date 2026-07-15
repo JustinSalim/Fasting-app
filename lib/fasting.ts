@@ -1,9 +1,9 @@
 export function formatElapsed(totalSeconds: number): string {
-  const totalMinutes = Math.floor(totalSeconds / 60)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor(totalSeconds / 60) % 60
+  const seconds = Math.floor(totalSeconds) % 60
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`)
-  return `${pad(hours)}:${pad(minutes)}`
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
 export function getFastingStage(elapsedHours: number): 'fasting' | 'fat_burning' {

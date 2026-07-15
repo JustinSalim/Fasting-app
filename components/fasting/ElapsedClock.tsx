@@ -30,7 +30,7 @@ export function ElapsedClock({ isFasting, startTime }: ElapsedClockProps) {
       <div className="font-label-caps text-label-caps text-on-surface-variant mb-2 opacity-70">
         {isFasting ? 'CURRENT FAST' : 'READY TO FAST'}
       </div>
-      <div className="font-display-clock text-display-clock text-primary tracking-tighter leading-none mb-1">
+      <div className="font-display-clock text-display-clock text-primary tracking-tighter leading-none mb-1 tabular-nums">
         {formatElapsed(displaySeconds)}
       </div>
       {isFasting && (
