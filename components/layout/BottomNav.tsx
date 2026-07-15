@@ -3,12 +3,13 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Timer, BarChart3, Settings } from 'lucide-react'
+import { Timer, BarChart3, Clock, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: Timer, enabled: true },
   { name: 'Stats', href: '/dashboard', icon: BarChart3, enabled: false },
+  { name: 'History', href: '/history', icon: Clock, enabled: true },
   { name: 'Settings', href: '/dashboard', icon: Settings, enabled: false },
 ]
 
