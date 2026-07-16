@@ -26,6 +26,7 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
   const max = Math.max(...values)
   const range = max - min || 1
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null)
+  const [showHistory, setShowHistory] = React.useState(false)
 
   const points = entries.map((entry, index) => {
     const x = entries.length === 1
@@ -55,8 +56,8 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
       <div className="relative">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="w-full h-auto overflow-visible"
-          onClick={() => setSelectedIndex(null)}
+          className="w-full h-auto overflow-visible cursor-pointer"
+          onClick={() => setShowHistory((v) => !v)}
         >
           <motion.path
             d={path}
@@ -112,6 +113,27 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
         <span>{format(parseISO(first.created_at), 'd MMM')}</span>
         <span>{format(parseISO(last.created_at), 'd MMM')}</span>
       </div>
+      {showHistory && (
+        <div className="mt-4 pt-4 border-t border-outline-variant/50 dark:border-outline-variant/10 max-h-64 overflow-y-auto flex flex-col gap-2">
+          {[...entries].reverse().map((entry, i) => {
+            const originalIndex = entries.length - 1 - i
+            const entryDelta = getWeightDelta(entries, originalIndex)
+            return (
+              <div key={entry.id} className="flex justify-between items-baseline font-body-md text-sm">
+                <span className="text-on-surface-variant">{format(parseISO(entry.created_at), 'd MMM yyyy')}</span>
+                <span className="text-on-surface">
+                  {entry.value.toFixed(1)} {unit}
+                  {entryDelta !== null && (
+                    <span className="text-on-surface-variant text-xs ml-2">
+                      ({entryDelta >= 0 ? '+' : ''}{entryDelta.toFixed(1)})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
