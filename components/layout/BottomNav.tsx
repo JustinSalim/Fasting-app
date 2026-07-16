@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: Timer, enabled: true },
-  { name: 'Stats', href: '/dashboard', icon: BarChart3, enabled: false },
+  { name: 'Stats', href: '/stats', icon: BarChart3, enabled: true },
   { name: 'History', href: '/history', icon: Clock, enabled: true },
-  { name: 'Settings', href: '/dashboard', icon: Settings, enabled: false },
+  { name: 'Settings', href: '/settings', icon: Settings, enabled: true },
 ]
 
 export function BottomNav() {
