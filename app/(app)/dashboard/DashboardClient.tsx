@@ -10,7 +10,7 @@ import { startFastingLog, updateFastingLog, cancelFastingLog } from '@/app/actio
 import { computeStopOutcome } from '@/lib/fasting'
 
 interface DashboardClientProps {
-  initialProfile: { full_name: string | null }
+  initialProfile: { full_name: string | null; min_fasting_threshold_minutes?: number | null }
 }
 
 export default function DashboardClient({ initialProfile }: DashboardClientProps) {
@@ -21,6 +21,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   const [confirmError, setConfirmError] = React.useState<string | null>(null)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
+  const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
 
   const openConfirm = () => {
     setConfirmError(null)
@@ -36,7 +37,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     setIsSubmitting(true)
     setConfirmError(null)
     if (isFasting && startTime && targetDuration && activeFastId) {
-      const outcome = computeStopOutcome(startTime, targetDuration, new Date())
+      const outcome = computeStopOutcome(startTime, targetDuration, new Date(), thresholdMinutes)
       const result = outcome.action === 'discard'
         ? await cancelFastingLog(activeFastId)
         : await updateFastingLog(activeFastId, outcome.status)
