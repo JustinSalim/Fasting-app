@@ -9,6 +9,9 @@ interface ProfileUpdateFields {
   min_fasting_threshold_minutes?: number
   reminder_offset_minutes?: number
   weight_unit?: 'kg' | 'lb'
+  notifications_enabled?: boolean
+  timezone?: string
+  daily_reminder_time?: string
 }
 
 const ALLOWED_PROFILE_UPDATE_KEYS = [
@@ -17,6 +20,9 @@ const ALLOWED_PROFILE_UPDATE_KEYS = [
   'min_fasting_threshold_minutes',
   'reminder_offset_minutes',
   'weight_unit',
+  'notifications_enabled',
+  'timezone',
+  'daily_reminder_time',
 ] as const satisfies readonly (keyof ProfileUpdateFields)[]
 
 export async function updateProfile(fields: ProfileUpdateFields) {
