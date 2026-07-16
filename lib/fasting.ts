@@ -16,6 +16,12 @@ export function getRemainingSeconds(targetHours: number, elapsedSeconds: number)
   return targetHours * 3600 - elapsedSeconds
 }
 
+export function getProgressFraction(targetHours: number, elapsedSeconds: number): number {
+  const targetSeconds = targetHours * 3600
+  if (targetSeconds <= 0) return 0
+  return Math.min(1, elapsedSeconds / targetSeconds)
+}
+
 export function computeStopOutcome(
   startTime: Date,
   targetHours: number,

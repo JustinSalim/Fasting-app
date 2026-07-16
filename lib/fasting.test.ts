@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatElapsed, getFastingStage, computeStopOutcome, getRemainingSeconds, getCurrentStreak, getCompletionRate } from './fasting'
+import { formatElapsed, getFastingStage, computeStopOutcome, getRemainingSeconds, getCurrentStreak, getCompletionRate, getProgressFraction } from './fasting'
 
 describe('formatElapsed', () => {
   it('formats seconds under an hour', () => {
@@ -160,5 +160,27 @@ describe('getCompletionRate', () => {
       { start_time: '2026-05-01T08:00:00.000Z', status: 'missed' as const },
     ]
     expect(getCompletionRate(logs, now)).toBe(100)
+  })
+})
+
+describe('getProgressFraction', () => {
+  it('is 0 at the start of a fast', () => {
+    expect(getProgressFraction(16, 0)).toBe(0)
+  })
+
+  it('is 0.5 halfway to the target', () => {
+    expect(getProgressFraction(16, 8 * 3600)).toBe(0.5)
+  })
+
+  it('is 1 exactly at the target', () => {
+    expect(getProgressFraction(16, 16 * 3600)).toBe(1)
+  })
+
+  it('caps at 1 during overtime (past the target)', () => {
+    expect(getProgressFraction(16, 20 * 3600)).toBe(1)
+  })
+
+  it('is 0 for a zero-or-negative target (no division by zero)', () => {
+    expect(getProgressFraction(0, 3600)).toBe(0)
   })
 })

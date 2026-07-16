@@ -1,9 +1,11 @@
 'use client'
 
 import * as React from 'react'
+import { useTheme } from 'next-themes'
 import { LogOut } from 'lucide-react'
 import { updateProfile, uploadAvatar } from '@/app/actions/profile'
 import { signOut } from '@/app/(auth)/actions'
+import { AccordionSection } from '@/components/settings/AccordionSection'
 
 interface ProfileData {
   full_name: string | null
@@ -27,6 +29,10 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
   const [error, setError] = React.useState<string | null>(null)
   const [avatarError, setAvatarError] = React.useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -59,14 +65,12 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
   }
 
   return (
-    <div className="flex flex-col flex-1 px-container-margin py-4 pb-32 gap-6">
+    <div className="flex flex-col flex-1 px-container-margin py-4 pb-32 gap-4">
       <header>
         <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">Settings</h1>
       </header>
 
-      <section className="bg-surface-container-low rounded-3xl p-5 shadow-float flex flex-col gap-4">
-        <span className="font-label-caps text-label-caps text-on-surface-variant">PROFILE</span>
-
+      <AccordionSection title="Profile" defaultOpen>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -107,10 +111,48 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
             className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
           />
         </label>
-      </section>
+      </AccordionSection>
 
-      <section className="bg-surface-container-low rounded-3xl p-5 shadow-float flex flex-col gap-4">
-        <span className="font-label-caps text-label-caps text-on-surface-variant">FASTING PREFERENCES</span>
+      <AccordionSection title="Preferences">
+        <div className="flex flex-col gap-1">
+          <span className="font-body-md text-sm text-on-surface-variant">Theme</span>
+          <div className="flex gap-2">
+            {(['light', 'dark', 'system'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={`flex-1 py-2 rounded-full font-label-caps text-label-caps capitalize ${
+                  mounted && theme === t
+                    ? 'bg-primary-container text-on-primary-container'
+                    : 'bg-surface-container text-on-surface-variant'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="font-body-md text-sm text-on-surface-variant">Weight unit</span>
+          <div className="flex gap-2">
+            {(['kg', 'lb'] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                onClick={() => setWeightUnit(unit)}
+                className={`flex-1 py-2 rounded-full font-label-caps text-label-caps ${
+                  weightUnit === unit
+                    ? 'bg-primary-container text-on-primary-container'
+                    : 'bg-surface-container text-on-surface-variant'
+                }`}
+              >
+                {unit.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <label className="flex flex-col gap-1">
           <span className="font-body-md text-sm text-on-surface-variant">Minimum fasting threshold (minutes)</span>
@@ -133,27 +175,7 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
             className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
           />
         </label>
-
-        <div className="flex flex-col gap-1">
-          <span className="font-body-md text-sm text-on-surface-variant">Weight unit</span>
-          <div className="flex gap-2">
-            {(['kg', 'lb'] as const).map((unit) => (
-              <button
-                key={unit}
-                type="button"
-                onClick={() => setWeightUnit(unit)}
-                className={`flex-1 py-2 rounded-full font-label-caps text-label-caps ${
-                  weightUnit === unit
-                    ? 'bg-primary-container text-on-primary-container'
-                    : 'bg-surface-container text-on-surface-variant'
-                }`}
-              >
-                {unit.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+      </AccordionSection>
 
       {error && <p className="font-body-md text-sm text-error">{error}</p>}
       <button
@@ -165,14 +187,16 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
         {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
       </button>
 
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="w-full py-3 rounded-full font-label-caps text-label-caps bg-error-container text-on-error-container flex items-center justify-center gap-2"
-        >
-          <LogOut size={16} /> SIGN OUT
-        </button>
-      </form>
+      <AccordionSection title="Account">
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="w-full py-3 rounded-full font-label-caps text-label-caps bg-error-container text-on-error-container flex items-center justify-center gap-2"
+          >
+            <LogOut size={16} /> SIGN OUT
+          </button>
+        </form>
+      </AccordionSection>
     </div>
   )
 }

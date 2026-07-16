@@ -19,6 +19,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   const [showConfirm, setShowConfirm] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [confirmError, setConfirmError] = React.useState<string | null>(null)
+  const [showNotifications, setShowNotifications] = React.useState(false)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
   const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
@@ -66,9 +67,13 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">
           Hi, {firstName}
         </h1>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant bg-surface-container-low shadow-float">
+        <button
+          type="button"
+          onClick={() => setShowNotifications(true)}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant bg-surface-container-low shadow-float hover:bg-surface-container transition-colors"
+        >
           <Bell size={18} />
-        </div>
+        </button>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
@@ -111,6 +116,12 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
             {isSubmitting ? 'SAVING...' : isFasting ? 'YES, STOP' : 'YES, START'}
           </button>
         </div>
+      </Modal>
+
+      <Modal isOpen={showNotifications} onClose={() => setShowNotifications(false)} title="Notifications">
+        <p className="font-body-md text-body-md text-on-surface-variant text-center py-6">
+          No notifications yet.
+        </p>
       </Modal>
     </div>
   )
