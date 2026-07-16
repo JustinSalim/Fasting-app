@@ -37,9 +37,6 @@ export function FastingProvider({ children, initialFast }: { children: React.Rea
     setStartTime(start)
     setTargetDuration(targetHours)
     setActiveFastId(id)
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission()
-    }
   }
 
   const stopFast = () => {

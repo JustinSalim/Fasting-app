@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useTheme } from 'next-themes'
 import { LogOut } from 'lucide-react'
 import { updateProfile, uploadAvatar } from '@/app/actions/profile'
+import { subscribeToPush, unsubscribeFromPush } from '@/app/actions/push'
 import { signOut } from '@/app/(auth)/actions'
 import { AccordionSection } from '@/components/settings/AccordionSection'
 
@@ -17,6 +18,13 @@ async function toWebp(file: File): Promise<File> {
   return blob ? new File([blob], 'avatar.webp', { type: 'image/webp' }) : file
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)))
+}
+
 interface ProfileData {
   full_name: string | null
   avatar_url: string | null
@@ -24,6 +32,8 @@ interface ProfileData {
   reminder_offset_minutes: number | null
   min_fasting_threshold_minutes: number | null
   weight_unit: string | null
+  notifications_enabled: boolean | null
+  daily_reminder_time: string | null
 }
 
 export function SettingsClient({ initialProfile }: { initialProfile: ProfileData | null }) {
@@ -39,6 +49,9 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
   const [error, setError] = React.useState<string | null>(null)
   const [avatarError, setAvatarError] = React.useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [notificationsEnabled, setNotificationsEnabled] = React.useState(initialProfile?.notifications_enabled ?? false)
+  const [dailyReminderTime, setDailyReminderTime] = React.useState(initialProfile?.daily_reminder_time || '20:00')
+  const [notifError, setNotifError] = React.useState<string | null>(null)
 
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
@@ -73,6 +86,66 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
       return
     }
     setAvatarUrl(result.url)
+  }
+
+  const handleEnableNotifications = async () => {
+    setNotifError(null)
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setNotifError('Push notifications are not supported in this browser')
+      return
+    }
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+      setNotifError('Notification permission was not granted')
+      return
+    }
+    try {
+      await navigator.serviceWorker.register('/sw.js')
+      // Wait for the worker to become active before subscribing — subscribe() throws
+      // "no active Service Worker" if called right after register() on a first-time
+      // install, since the worker is still installing/waiting at that point.
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
+      })
+      const json = subscription.toJSON()
+      const result = await subscribeToPush({
+        endpoint: json.endpoint!,
+        keys: { p256dh: json.keys!.p256dh!, auth: json.keys!.auth! },
+      })
+      if (!result.success) {
+        setNotifError(result.error)
+        return
+      }
+      await updateProfile({
+        notifications_enabled: true,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        daily_reminder_time: dailyReminderTime,
+      })
+      setNotificationsEnabled(true)
+    } catch (err) {
+      setNotifError(err instanceof Error ? err.message : 'Failed to enable notifications')
+    }
+  }
+
+  const handleDisableNotifications = async () => {
+    setNotifError(null)
+    const registration = await navigator.serviceWorker.getRegistration()
+    const subscription = await registration?.pushManager.getSubscription()
+    if (subscription) {
+      await unsubscribeFromPush(subscription.endpoint)
+      await subscription.unsubscribe()
+    }
+    await updateProfile({ notifications_enabled: false })
+    setNotificationsEnabled(false)
+  }
+
+  const handleReminderTimeChange = async (value: string) => {
+    setDailyReminderTime(value)
+    if (notificationsEnabled) {
+      await updateProfile({ daily_reminder_time: value })
+    }
   }
 
   return (
@@ -186,6 +259,35 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
             className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
           />
         </label>
+      </AccordionSection>
+
+      <AccordionSection title="Notifications">
+        <div className="flex items-center justify-between">
+          <span className="font-body-md text-sm text-on-surface-variant">Enable notifications</span>
+          <button
+            type="button"
+            onClick={notificationsEnabled ? handleDisableNotifications : handleEnableNotifications}
+            className={`px-4 py-2 rounded-full font-label-caps text-label-caps ${
+              notificationsEnabled
+                ? 'bg-primary-container text-on-primary-container'
+                : 'bg-surface-container text-on-surface-variant'
+            }`}
+          >
+            {notificationsEnabled ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        {notificationsEnabled && (
+          <label className="flex flex-col gap-1">
+            <span className="font-body-md text-sm text-on-surface-variant">Daily reminder time</span>
+            <input
+              type="time"
+              value={dailyReminderTime}
+              onChange={(e) => handleReminderTimeChange(e.target.value)}
+              className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+            />
+          </label>
+        )}
+        {notifError && <p className="font-body-md text-sm text-error">{notifError}</p>}
       </AccordionSection>
 
       {error && <p className="font-body-md text-sm text-error">{error}</p>}
