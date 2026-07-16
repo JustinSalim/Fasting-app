@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatElapsed, getFastingStage, computeStopOutcome, getRemainingSeconds } from './fasting'
+import { formatElapsed, getFastingStage, computeStopOutcome, getRemainingSeconds, getCurrentStreak, getCompletionRate } from './fasting'
 
 describe('formatElapsed', () => {
   it('formats seconds under an hour', () => {
@@ -70,5 +70,64 @@ describe('getRemainingSeconds', () => {
   it('returns negative seconds once past the goal (overtime)', () => {
     // 1h target, 1h01m elapsed -> 60s overtime
     expect(getRemainingSeconds(1, 3660)).toBe(-60)
+  })
+})
+
+describe('getCurrentStreak', () => {
+  it('returns 0 for empty history', () => {
+    expect(getCurrentStreak([])).toBe(0)
+  })
+
+  it('counts consecutive completed fasts from the most recent', () => {
+    const logs = [
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-12T08:00:00.000Z', status: 'missed' as const },
+      { start_time: '2026-07-11T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs)).toBe(2)
+  })
+
+  it('is unaffected by input order (sorts internally)', () => {
+    const logs = [
+      { start_time: '2026-07-12T08:00:00.000Z', status: 'missed' as const },
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs)).toBe(2)
+  })
+
+  it('returns 0 when the most recent fast was missed', () => {
+    const logs = [
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'missed' as const },
+      { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs)).toBe(0)
+  })
+})
+
+describe('getCompletionRate', () => {
+  const now = new Date('2026-07-16T12:00:00.000Z')
+
+  it('returns 0 for empty history', () => {
+    expect(getCompletionRate([], now)).toBe(0)
+  })
+
+  it('computes percentage completed within the window', () => {
+    const logs = [
+      { start_time: '2026-07-15T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-13T08:00:00.000Z', status: 'missed' as const },
+      { start_time: '2026-07-12T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCompletionRate(logs, now)).toBe(75)
+  })
+
+  it('excludes fasts older than the window', () => {
+    const logs = [
+      { start_time: '2026-07-15T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-05-01T08:00:00.000Z', status: 'missed' as const },
+    ]
+    expect(getCompletionRate(logs, now)).toBe(100)
   })
 })

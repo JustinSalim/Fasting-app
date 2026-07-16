@@ -29,3 +29,31 @@ export function computeStopOutcome(
   const status = elapsedMinutes >= targetHours * 60 ? 'completed' : 'missed'
   return { action: 'save', status }
 }
+
+export interface StreakLog {
+  start_time: string
+  status: 'completed' | 'missed' | 'partial'
+}
+
+export function getCurrentStreak(logs: StreakLog[]): number {
+  const sorted = [...logs].sort(
+    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+  )
+
+  let streak = 0
+  for (const log of sorted) {
+    if (log.status !== 'completed') break
+    streak++
+  }
+  return streak
+}
+
+export function getCompletionRate(logs: StreakLog[], now: Date, windowDays = 30): number {
+  const cutoff = now.getTime() - windowDays * 24 * 60 * 60 * 1000
+  const inWindow = logs.filter((log) => new Date(log.start_time).getTime() >= cutoff)
+
+  if (inWindow.length === 0) return 0
+
+  const completed = inWindow.filter((log) => log.status === 'completed').length
+  return Math.round((completed / inWindow.length) * 100)
+}
