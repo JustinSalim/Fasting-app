@@ -47,4 +47,25 @@ describe('sendPush', () => {
     const result = await sendPush(subscription, payload)
     expect(result).toEqual({ delivered: false, expired: false })
   })
+
+  it('configures VAPID details exactly once across repeated calls', async () => {
+    // The module-level `configured` flag persists across tests in this file, so a
+    // fresh module instance is needed to observe the first-call configuration
+    // deterministically rather than depending on prior test execution order.
+    vi.resetModules()
+    const freshWebpush = (await import('web-push')).default
+    vi.mocked(freshWebpush.sendNotification).mockResolvedValue({} as never)
+    vi.mocked(freshWebpush.setVapidDetails).mockClear()
+    const { sendPush: freshSendPush } = await import('./push')
+
+    await freshSendPush(subscription, payload)
+    await freshSendPush(subscription, payload)
+
+    expect(freshWebpush.setVapidDetails).toHaveBeenCalledTimes(1)
+    expect(freshWebpush.setVapidDetails).toHaveBeenCalledWith(
+      process.env.VAPID_SUBJECT,
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    )
+  })
 })

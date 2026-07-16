@@ -36,7 +36,9 @@ export async function sendPush(
     )
     return { delivered: true }
   } catch (err) {
-    const statusCode = (err as { statusCode?: number }).statusCode
+    const statusCode = typeof err === 'object' && err !== null && 'statusCode' in err
+      ? (err as { statusCode?: number }).statusCode
+      : undefined
     const expired = statusCode === 404 || statusCode === 410
     return { delivered: false, expired }
   }
