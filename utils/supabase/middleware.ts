@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
                       request.nextUrl.pathname.startsWith('/signup') ||
                       request.nextUrl.pathname.startsWith('/auth')
 
-  const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/manifest.json' || request.nextUrl.pathname.startsWith('/icon')
+  const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/manifest.json' || request.nextUrl.pathname === '/sw.js' || request.nextUrl.pathname.startsWith('/icon')
 
   if (!user && !isAuthRoute && !isPublicRoute) {
     const url = request.nextUrl.clone()
