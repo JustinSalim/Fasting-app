@@ -54,7 +54,7 @@ export function LoginView({ error, message }: LoginViewProps) {
           <ArrowRight size={18} />
         </button>
       </form>
-      <p className="text-center font-body-md text-body-md text-on-surface-variant/60 text-sm px-4">
+      <p className="text-center font-body-md text-body-md text-on-surface-variant text-sm px-4">
         New here? <Link href="/signup" className="text-primary hover:text-primary-fixed-dim transition-colors underline decoration-primary/30 underline-offset-4">Create an account</Link>
       </p>
     </AuthCard>

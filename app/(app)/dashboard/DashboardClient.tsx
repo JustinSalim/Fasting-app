@@ -1,13 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { Bell, Play, Square } from 'lucide-react'
+import { Bell, BellOff, Play, Square } from 'lucide-react'
 import { useFasting } from '@/components/fasting/FastingContext'
 import { DurationSelector } from '@/components/fasting/DurationSelector'
 import { FastingClock } from '@/components/fasting/FastingClock'
 import { Modal } from '@/components/ui/Modal'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { startFastingLog, updateFastingLog, cancelFastingLog } from '@/app/actions/fasting'
-import { computeStopOutcome } from '@/lib/fasting'
+import { computeStopOutcome, formatTargetDuration } from '@/lib/fasting'
 
 interface DashboardClientProps {
   initialProfile: { full_name: string | null; min_fasting_threshold_minutes?: number | null }
@@ -95,7 +96,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
 
       <Modal isOpen={showConfirm} onClose={closeConfirm} title={isFasting ? 'Stop Fasting' : 'Start Fasting'}>
         <p className="font-body-md text-body-md text-on-surface mb-6">
-          Are you sure you want to {isFasting ? 'stop your current fast' : `start a ${duration}h fast`}?
+          Are you sure you want to {isFasting ? 'stop your current fast' : `start a ${duration ? formatTargetDuration(duration) : ''} fast`}?
         </p>
         {confirmError && (
           <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
@@ -119,9 +120,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       </Modal>
 
       <Modal isOpen={showNotifications} onClose={() => setShowNotifications(false)} title="Notifications">
-        <p className="font-body-md text-body-md text-on-surface-variant text-center py-6">
-          No notifications yet.
-        </p>
+        <EmptyState icon={BellOff} title="No notifications yet" subtitle="We'll let you know when there's something new." />
       </Modal>
     </div>
   )

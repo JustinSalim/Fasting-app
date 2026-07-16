@@ -44,7 +44,7 @@ export function SignupView({ error }: SignupViewProps) {
           <ArrowRight size={18} />
         </button>
       </form>
-      <p className="text-center font-body-md text-body-md text-on-surface-variant/60 text-sm px-4">
+      <p className="text-center font-body-md text-body-md text-on-surface-variant text-sm px-4">
         Already have an account? <Link href="/login" className="text-primary hover:text-primary-fixed-dim transition-colors underline decoration-primary/30 underline-offset-4">Log in</Link>
       </p>
     </AuthCard>

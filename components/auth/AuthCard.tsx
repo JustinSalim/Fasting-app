@@ -23,7 +23,7 @@ export function AuthCard({ icon: Icon, title, subtitle, children }: AuthCardProp
             {subtitle}
           </p>
         </header>
-        <div className="bg-surface/70 backdrop-blur-xl rounded-3xl p-8 shadow-float flex flex-col gap-6">
+        <div className="bg-surface/70 backdrop-blur-xl rounded-3xl p-8 shadow-float border border-outline-variant/50 dark:border-outline-variant/10 flex flex-col gap-6">
           {children}
         </div>
       </div>

@@ -41,7 +41,7 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
   const last = entries[entries.length - 1]
 
   return (
-    <div className="w-full bg-surface-container-low rounded-3xl p-5 shadow-float">
+    <div className="w-full bg-surface-container-low rounded-3xl p-5 shadow-float border border-outline-variant/50 dark:border-outline-variant/10">
       <div className="flex justify-between items-baseline mb-4">
         <span className="font-label-caps text-label-caps text-on-surface-variant">WEIGHT</span>
         <span className="font-body-md text-2xl font-semibold text-on-surface">

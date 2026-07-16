@@ -1,10 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { CheckCircle2, Flame, HelpCircle } from 'lucide-react'
+import { CheckCircle2, Flame, HelpCircle, Clock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { format, differenceInMinutes, parseISO } from 'date-fns'
 import { Modal } from '@/components/ui/Modal'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { formatTargetDuration } from '@/lib/fasting'
 
 interface FastingLog {
   id: string
@@ -49,9 +51,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
       </header>
 
       {logs.length === 0 ? (
-        <div className="text-center py-12 font-body-md text-body-md text-on-surface-variant">
-          No fasts recorded yet. Start your first fast from Home.
-        </div>
+        <EmptyState icon={Clock} title="No fasts recorded yet" subtitle="Start your first fast from Home." />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
           {logs.map((log) => {
@@ -59,11 +59,12 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
             const style = statusStyle[log.status] ?? statusStyle.missed
             const Icon = style.icon
 
+            const targetHours = Number(log.target_duration_hours) || 16
+
             let progress = 0
             if (log.end_time) {
               const mins = differenceInMinutes(parseISO(log.end_time), start)
-              const targetMins = (log.target_duration_hours || 16) * 60
-              progress = Math.min(100, Math.round((mins / targetMins) * 100))
+              progress = Math.min(100, Math.round((mins / (targetHours * 60)) * 100))
             }
 
             return (
@@ -71,7 +72,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
                 key={log.id}
                 variants={itemVariants}
                 onClick={() => setSelectedLog(log)}
-                className="text-left bg-surface-container-low p-5 rounded-3xl shadow-float hover:shadow-float-hover active:scale-[0.99] transition-all"
+                className="text-left bg-surface-container-low p-5 rounded-3xl shadow-float border border-outline-variant/50 dark:border-outline-variant/10 hover:shadow-float-hover active:scale-[0.99] transition-all"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -79,7 +80,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
                       {format(start, 'EEE, d MMM')}
                     </span>
                     <h3 className="font-headline-lg-mobile text-lg font-semibold text-on-surface">
-                      {log.target_duration_hours}h Fast
+                      {formatTargetDuration(targetHours)} Fast
                     </h3>
                   </div>
                   <div className={`p-2 rounded-full ${style.container}`}>
@@ -89,7 +90,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
 
                 <div className="flex items-end gap-2">
                   <span className="font-body-md text-2xl font-semibold text-on-surface">{formatDuration(log.start_time, log.end_time)}</span>
-                  <span className="font-body-md text-sm text-on-surface-variant mb-1">/ {log.target_duration_hours}h goal</span>
+                  <span className="font-body-md text-sm text-on-surface-variant mb-1">/ {formatTargetDuration(targetHours)} goal</span>
                 </div>
 
                 <div className="w-full h-2 bg-surface-container-highest rounded-full mt-4 overflow-hidden">

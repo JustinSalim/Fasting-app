@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Scale } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { WeightChart, type WeightEntry } from '@/components/stats/WeightChart'
 import { FastingTrendsChart, type FastingLogSummary } from '@/components/stats/FastingTrendsChart'
 import { getCurrentStreak, getCompletionRate } from '@/lib/fasting'
@@ -80,14 +81,15 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
           </button>
         </>
       ) : (
-        <div className="bg-surface-container-low rounded-3xl p-6 shadow-float text-center">
-          <p className="font-body-md text-body-md text-on-surface-variant mb-4">No weight logged yet.</p>
-          <button
-            onClick={openAddWeight}
-            className="font-label-caps text-label-caps bg-primary-container text-on-primary-container px-5 py-2.5 rounded-full inline-flex items-center gap-2"
-          >
-            <Plus size={16} /> ADD WEIGHT
-          </button>
+        <div className="bg-surface-container-low rounded-3xl p-6 shadow-float border border-outline-variant/50 dark:border-outline-variant/10">
+          <EmptyState icon={Scale} title="No weight logged yet" subtitle="Track your progress over time.">
+            <button
+              onClick={openAddWeight}
+              className="mt-1 font-label-caps text-label-caps bg-primary-container text-on-primary-container px-5 py-2.5 rounded-full inline-flex items-center gap-2"
+            >
+              <Plus size={16} /> ADD WEIGHT
+            </button>
+          </EmptyState>
         </div>
       )}
 

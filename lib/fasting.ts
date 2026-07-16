@@ -8,6 +8,13 @@ export function formatElapsed(totalSeconds: number): string {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
+export function formatTargetDuration(hours: number): string {
+  const totalMinutes = Math.round(hours * 60)
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return m === 0 ? `${h}H` : `${h}H${String(m).padStart(2, '0')}`
+}
+
 export function getFastingStage(elapsedHours: number): 'fasting' | 'fat_burning' {
   return elapsedHours >= 12 ? 'fat_burning' : 'fasting'
 }

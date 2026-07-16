@@ -172,8 +172,8 @@
   --spacing-inner-padding: 20px;
 
   --font-display-clock: var(--font-outfit);
-  --text-display-clock: 80px;
-  --text-display-clock--line-height: 80px;
+  --text-display-clock: clamp(2.75rem, 15vw, 5rem);
+  --text-display-clock--line-height: 1;
   --text-display-clock--letter-spacing: -0.04em;
   --text-display-clock--font-weight: 200;
 
@@ -222,4 +222,14 @@ body {
   background: var(--color-background);
   color: var(--color-on-surface);
   min-height: 100vh;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
 }

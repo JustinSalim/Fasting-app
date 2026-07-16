@@ -28,7 +28,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ ease: [0.2, 0.8, 0.2, 1], duration: 0.3 }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-surface p-6 shadow-float"
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-surface p-6 shadow-float border border-outline-variant/50 dark:border-outline-variant/10"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">{title}</h2>

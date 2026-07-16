@@ -52,6 +52,13 @@ export async function uploadAvatar(formData: FormData) {
   const file = formData.get('avatar')
   if (!(file instanceof File)) return { error: 'No file provided' }
 
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', user.id)
+    .single()
+  const oldPath = currentProfile?.avatar_url?.split('/avatars/')[1]
+
   const ext = file.name.split('.').pop() || 'jpg'
   const path = `${user.id}/avatar-${Date.now()}.${ext}`
 
@@ -65,6 +72,10 @@ export async function uploadAvatar(formData: FormData) {
     .update({ avatar_url: publicUrlData.publicUrl })
     .eq('id', user.id)
   if (updateError) return { error: updateError.message }
+
+  if (oldPath) {
+    await supabase.storage.from('avatars').remove([oldPath])
+  }
 
   revalidatePath('/settings', 'page')
   revalidatePath('/dashboard', 'layout')

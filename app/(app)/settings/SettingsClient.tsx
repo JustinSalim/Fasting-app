@@ -7,6 +7,16 @@ import { updateProfile, uploadAvatar } from '@/app/actions/profile'
 import { signOut } from '@/app/(auth)/actions'
 import { AccordionSection } from '@/components/settings/AccordionSection'
 
+async function toWebp(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file)
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0)
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.85))
+  return blob ? new File([blob], 'avatar.webp', { type: 'image/webp' }) : file
+}
+
 interface ProfileData {
   full_name: string | null
   avatar_url: string | null
@@ -54,8 +64,9 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
     const file = e.target.files?.[0]
     if (!file) return
     setAvatarError(null)
+    const webpFile = await toWebp(file)
     const formData = new FormData()
-    formData.set('avatar', file)
+    formData.set('avatar', webpFile)
     const result = await uploadAvatar(formData)
     if (!result.success) {
       setAvatarError(result.error)
@@ -74,7 +85,7 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-2xl font-semibold overflow-hidden self-center"
+          className="w-20 h-20 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-2xl font-semibold overflow-hidden self-center transition-transform hover:scale-105 active:scale-95"
         >
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

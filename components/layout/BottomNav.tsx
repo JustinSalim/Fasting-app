@@ -17,7 +17,7 @@ export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-md z-50 flex justify-around items-center p-2 bg-surface/90 dark:bg-surface-container/90 backdrop-blur-2xl rounded-full shadow-float">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-md z-50 flex justify-around items-center p-2 bg-surface/90 dark:bg-surface-container/90 backdrop-blur-2xl rounded-full shadow-float border border-outline-variant/50 dark:border-outline-variant/10">
       {navItems.map((item) =>
         item.enabled ? (
           <Link

@@ -14,11 +14,11 @@ export function AccordionSection({ title, defaultOpen = false, children }: Accor
   const [isOpen, setIsOpen] = React.useState(defaultOpen)
 
   return (
-    <section className="bg-surface-container-low rounded-3xl shadow-float overflow-hidden">
+    <section className="bg-surface-container-low rounded-3xl shadow-float overflow-hidden border border-outline-variant/50 dark:border-outline-variant/10">
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="w-full flex items-center justify-between px-5 py-4"
+        className="w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-container-high"
       >
         <span className="font-label-caps text-label-caps text-on-surface-variant">{title}</span>
         <motion.span
