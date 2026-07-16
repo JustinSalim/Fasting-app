@@ -38,6 +38,7 @@ yarn-error.log*
 
 # claude code worktrees / local state
 /.claude/
+/.superpowers/
 
 # typescript
 *.tsbuildinfo
