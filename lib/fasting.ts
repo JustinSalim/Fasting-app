@@ -1,3 +1,5 @@
+import { differenceInCalendarDays } from 'date-fns'
+
 export function formatElapsed(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor(totalSeconds / 60) % 60
@@ -35,10 +37,16 @@ export interface StreakLog {
   status: 'completed' | 'missed' | 'partial'
 }
 
-export function getCurrentStreak(logs: StreakLog[]): number {
+export function getCurrentStreak(logs: StreakLog[], now: Date): number {
   const sorted = [...logs].sort(
     (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
   )
+
+  if (sorted.length === 0) return 0
+
+  if (differenceInCalendarDays(now, new Date(sorted[0].start_time)) > 1) {
+    return 0
+  }
 
   let streak = 0
   for (const log of sorted) {

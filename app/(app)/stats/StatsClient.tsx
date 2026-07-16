@@ -35,7 +35,7 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
     })
     .filter((entry) => !Number.isNaN(entry.value))
 
-  const streak = getCurrentStreak(fastingLogs)
+  const streak = getCurrentStreak(fastingLogs, new Date())
   const completionRate = getCompletionRate(fastingLogs, new Date())
 
   const openAddWeight = () => {

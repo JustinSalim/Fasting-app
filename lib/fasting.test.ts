@@ -75,34 +75,65 @@ describe('getRemainingSeconds', () => {
 
 describe('getCurrentStreak', () => {
   it('returns 0 for empty history', () => {
-    expect(getCurrentStreak([])).toBe(0)
+    const now = new Date('2026-07-16T12:00:00.000Z')
+    expect(getCurrentStreak([], now)).toBe(0)
   })
 
   it('counts consecutive completed fasts from the most recent', () => {
+    const now = new Date('2026-07-14T20:00:00.000Z')
     const logs = [
       { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
       { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
       { start_time: '2026-07-12T08:00:00.000Z', status: 'missed' as const },
       { start_time: '2026-07-11T08:00:00.000Z', status: 'completed' as const },
     ]
-    expect(getCurrentStreak(logs)).toBe(2)
+    expect(getCurrentStreak(logs, now)).toBe(2)
   })
 
   it('is unaffected by input order (sorts internally)', () => {
+    const now = new Date('2026-07-14T20:00:00.000Z')
     const logs = [
       { start_time: '2026-07-12T08:00:00.000Z', status: 'missed' as const },
       { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
       { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
     ]
-    expect(getCurrentStreak(logs)).toBe(2)
+    expect(getCurrentStreak(logs, now)).toBe(2)
   })
 
   it('returns 0 when the most recent fast was missed', () => {
+    const now = new Date('2026-07-14T20:00:00.000Z')
     const logs = [
       { start_time: '2026-07-14T08:00:00.000Z', status: 'missed' as const },
       { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const },
     ]
-    expect(getCurrentStreak(logs)).toBe(0)
+    expect(getCurrentStreak(logs, now)).toBe(0)
+  })
+
+  it('returns 0 when the most recent fast (of any status) is more than a day stale', () => {
+    const now = new Date('2026-07-16T12:00:00.000Z')
+    const logs = [
+      { start_time: '2026-05-01T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-04-30T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs, now)).toBe(0)
+  })
+
+  it('counts the streak when the most recent fast was today', () => {
+    const now = new Date('2026-07-16T12:00:00.000Z')
+    const logs = [
+      { start_time: '2026-07-16T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-15T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs, now)).toBe(2)
+  })
+
+  it('counts the streak when the most recent fast was yesterday', () => {
+    const now = new Date('2026-07-16T12:00:00.000Z')
+    const logs = [
+      { start_time: '2026-07-15T08:00:00.000Z', status: 'completed' as const },
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const },
+    ]
+    expect(getCurrentStreak(logs, now)).toBe(2)
   })
 })
 
