@@ -104,7 +104,14 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
       // Wait for the worker to become active before subscribing — subscribe() throws
       // "no active Service Worker" if called right after register() on a first-time
       // install, since the worker is still installing/waiting at that point.
-      const registration = await navigator.serviceWorker.ready
+      // navigator.serviceWorker.ready never rejects, so race it against a timeout —
+      // otherwise a worker that never activates hangs this forever with no error shown.
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Service worker did not activate in time')), 10000)
+        ),
+      ])
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
