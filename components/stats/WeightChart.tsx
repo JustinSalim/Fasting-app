@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { motion } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
+import { getWeightDelta } from '@/lib/weight'
 
 export interface WeightEntry {
   id: string
@@ -24,6 +25,7 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
+  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null)
 
   const points = entries.map((entry, index) => {
     const x = entries.length === 1
@@ -39,6 +41,8 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
 
   const first = entries[0]
   const last = entries[entries.length - 1]
+  const selected = selectedIndex !== null ? points[selectedIndex] : null
+  const delta = selectedIndex !== null ? getWeightDelta(entries, selectedIndex) : null
 
   return (
     <div className="w-full bg-surface-container-low rounded-3xl p-5 shadow-float border border-outline-variant/50 dark:border-outline-variant/10">
@@ -48,22 +52,62 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
           {last.value.toFixed(1)} <span className="text-sm text-on-surface-variant">{unit}</span>
         </span>
       </div>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto overflow-visible">
-        <motion.path
-          d={path}
-          fill="none"
-          className="stroke-primary"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
-        />
-        {points.map((p) => (
-          <circle key={p.entry.id} cx={p.x} cy={p.y} r={3} className="fill-primary" />
-        ))}
-      </svg>
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="w-full h-auto overflow-visible"
+          onClick={() => setSelectedIndex(null)}
+        >
+          <motion.path
+            d={path}
+            fill="none"
+            className="stroke-primary"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
+          />
+          {points.map((p, i) => (
+            <g key={p.entry.id}>
+              <circle cx={p.x} cy={p.y} r={3} className="fill-primary" />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={10}
+                fill="transparent"
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedIndex((current) => (current === i ? null : i))
+                }}
+              />
+            </g>
+          ))}
+        </svg>
+        {selected && (
+          <div
+            className={`absolute -translate-y-full mb-2 pointer-events-none bg-surface-container-high text-on-surface rounded-xl px-3 py-2 shadow-float text-xs whitespace-nowrap ${
+              selectedIndex === 0
+                ? 'translate-x-0'
+                : selectedIndex === entries.length - 1
+                ? '-translate-x-full'
+                : '-translate-x-1/2'
+            }`}
+            style={{
+              left: `${(selected.x / WIDTH) * 100}%`,
+              top: `${(selected.y / HEIGHT) * 100}%`,
+            }}
+          >
+            <div className="font-semibold">{format(parseISO(selected.entry.created_at), 'd MMM')}</div>
+            <div>
+              {selected.entry.value.toFixed(1)} {unit}
+              {delta !== null && ` (${delta >= 0 ? '+' : ''}${delta.toFixed(1)})`}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex justify-between mt-2 font-body-md text-xs text-on-surface-variant">
         <span>{format(parseISO(first.created_at), 'd MMM')}</span>
         <span>{format(parseISO(last.created_at), 'd MMM')}</span>
