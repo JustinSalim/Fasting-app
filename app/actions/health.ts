@@ -11,13 +11,16 @@ export async function logWeight(value: number) {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
-  const { data: existing } = await supabase
+  const { data: existingRows } = await supabase
     .from('health_logs')
     .select('id')
     .eq('user_id', user.id)
     .eq('log_type', 'weight')
     .gte('created_at', todayStart.toISOString())
-    .maybeSingle()
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  const existing = existingRows?.[0] ?? null
 
   const { data, error } = existing
     ? await supabase
