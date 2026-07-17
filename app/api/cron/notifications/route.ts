@@ -6,6 +6,7 @@ import {
   shouldSendPreGoalReminder,
   isSameLocalDate,
   isWithinReminderWindow,
+  getOverdueOngoingLogs,
 } from '@/lib/notifications'
 
 const WINDOW_MINUTES = 15
@@ -102,6 +103,39 @@ export async function GET(request: NextRequest) {
     const loggedWeightToday = !!recentWeights?.[0] && isSameLocalDate(recentWeights[0].created_at, profile.timezone, now)
     if (!loggedWeightToday) {
       await send("Log today's weight", 'Keep your weight trend up to date.', '/stats')
+    }
+  }
+
+  const { data: eatingWindowProfiles } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('eating_window_enabled', true)
+
+  for (const profile of eatingWindowProfiles ?? []) {
+    const { data: ongoing } = await supabase
+      .from('fasting_logs')
+      .select('id, start_time, target_duration_hours')
+      .eq('user_id', profile.id)
+      .eq('status', 'ongoing')
+
+    const overdue = getOverdueOngoingLogs(
+      (ongoing ?? []).map((log) => ({
+        id: log.id,
+        startTime: log.start_time,
+        targetDurationHours: log.target_duration_hours,
+      })),
+      now
+    )
+
+    for (const log of overdue) {
+      const endTime = new Date(
+        new Date(log.startTime).getTime() + log.targetDurationHours * 3600_000
+      ).toISOString()
+      await supabase
+        .from('fasting_logs')
+        .update({ status: 'completed', end_time: endTime })
+        .eq('id', log.id)
+        .eq('status', 'ongoing')
     }
   }
 
