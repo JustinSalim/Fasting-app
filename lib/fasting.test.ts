@@ -135,6 +135,16 @@ describe('getCurrentStreak', () => {
     ]
     expect(getCurrentStreak(logs, now)).toBe(2)
   })
+
+  it('ignores eating-window rows when counting the streak', () => {
+    const now = new Date('2026-07-14T20:00:00.000Z')
+    const logs = [
+      { start_time: '2026-07-14T16:00:00.000Z', status: 'completed' as const, phase: 'eating' as const },
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'completed' as const, phase: 'fasting' as const },
+      { start_time: '2026-07-13T08:00:00.000Z', status: 'completed' as const, phase: 'fasting' as const },
+    ]
+    expect(getCurrentStreak(logs, now)).toBe(2)
+  })
 })
 
 describe('getCompletionRate', () => {
@@ -160,6 +170,15 @@ describe('getCompletionRate', () => {
       { start_time: '2026-05-01T08:00:00.000Z', status: 'missed' as const },
     ]
     expect(getCompletionRate(logs, now)).toBe(100)
+  })
+
+  it('ignores eating-window rows when computing completion rate', () => {
+    const logs = [
+      { start_time: '2026-07-15T08:00:00.000Z', status: 'completed' as const, phase: 'fasting' as const },
+      { start_time: '2026-07-15T16:00:00.000Z', status: 'missed' as const, phase: 'eating' as const },
+      { start_time: '2026-07-14T08:00:00.000Z', status: 'missed' as const, phase: 'fasting' as const },
+    ]
+    expect(getCompletionRate(logs, now)).toBe(50)
   })
 })
 

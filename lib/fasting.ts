@@ -48,10 +48,12 @@ export function computeStopOutcome(
 export interface StreakLog {
   start_time: string
   status: 'completed' | 'missed' | 'partial'
+  phase?: 'fasting' | 'eating'
 }
 
 export function getCurrentStreak(logs: StreakLog[], now: Date): number {
-  const sorted = [...logs].sort(
+  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
+  const sorted = [...fastingLogs].sort(
     (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
   )
 
@@ -70,8 +72,9 @@ export function getCurrentStreak(logs: StreakLog[], now: Date): number {
 }
 
 export function getCompletionRate(logs: StreakLog[], now: Date, windowDays = 30): number {
+  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
   const cutoff = now.getTime() - windowDays * 24 * 60 * 60 * 1000
-  const inWindow = logs.filter((log) => new Date(log.start_time).getTime() >= cutoff)
+  const inWindow = fastingLogs.filter((log) => new Date(log.start_time).getTime() >= cutoff)
 
   if (inWindow.length === 0) return 0
 
