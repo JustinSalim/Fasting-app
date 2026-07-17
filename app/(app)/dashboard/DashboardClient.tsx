@@ -7,23 +7,33 @@ import { DurationSelector } from '@/components/fasting/DurationSelector'
 import { FastingClock } from '@/components/fasting/FastingClock'
 import { Modal } from '@/components/ui/Modal'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { startFastingLog, updateFastingLog, cancelFastingLog } from '@/app/actions/fasting'
+import { startFastingLog, updateFastingLog, cancelFastingLog, completeFastingLogAtTarget } from '@/app/actions/fasting'
 import { computeStopOutcome, formatTargetDuration } from '@/lib/fasting'
 
 interface DashboardClientProps {
-  initialProfile: { full_name: string | null; min_fasting_threshold_minutes?: number | null }
+  initialProfile: {
+    full_name: string | null
+    min_fasting_threshold_minutes?: number | null
+    eating_window_enabled?: boolean | null
+    eating_window_hours?: number | null
+  }
 }
 
 export default function DashboardClient({ initialProfile }: DashboardClientProps) {
-  const { isFasting, startTime, targetDuration, activeFastId, startFast, stopFast } = useFasting()
+  const { isFasting, startTime, targetDuration, activeFastId, phase, startFast, stopFast } = useFasting()
   const [duration, setDuration] = React.useState<number | null>(targetDuration)
   const [showConfirm, setShowConfirm] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [confirmError, setConfirmError] = React.useState<string | null>(null)
   const [showNotifications, setShowNotifications] = React.useState(false)
+  // Tracks the phase that just auto-completed, so the dashboard can offer a
+  // manual "start the next phase" CTA instead of the normal start/stop button.
+  const [justCompletedPhase, setJustCompletedPhase] = React.useState<'fasting' | 'eating' | null>(null)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
   const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
+  const eatingWindowEnabled = initialProfile.eating_window_enabled ?? false
+  const eatingWindowHours = initialProfile.eating_window_hours ?? 8
 
   const openConfirm = () => {
     setConfirmError(null)
@@ -50,17 +60,41 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       }
       stopFast()
     } else if (duration) {
-      const result = await startFastingLog(duration)
+      const result = await startFastingLog(duration, 'fasting')
       if (!result.success) {
         setConfirmError(result.error)
         setIsSubmitting(false)
         return
       }
+      setJustCompletedPhase(null)
       startFast(duration, result.data.id, new Date(result.data.start_time), 'fasting')
     }
     setIsSubmitting(false)
     setShowConfirm(false)
   }
+
+  const handleTargetReached = React.useCallback(async () => {
+    if (!activeFastId || !startTime || !targetDuration) return
+    await completeFastingLogAtTarget(activeFastId, startTime.toISOString(), targetDuration)
+    setJustCompletedPhase(phase)
+    stopFast()
+  }, [activeFastId, startTime, targetDuration, phase, stopFast])
+
+  const handleStartNextPhase = async () => {
+    const nextPhase = justCompletedPhase === 'fasting' ? 'eating' : 'fasting'
+    const nextDuration = nextPhase === 'eating' ? eatingWindowHours : (duration ?? 16)
+    setIsSubmitting(true)
+    const result = await startFastingLog(nextDuration, nextPhase)
+    setIsSubmitting(false)
+    if (!result.success) {
+      setConfirmError(result.error)
+      return
+    }
+    setJustCompletedPhase(null)
+    startFast(nextDuration, result.data.id, new Date(result.data.start_time), nextPhase)
+  }
+
+  const showNextPhaseCta = eatingWindowEnabled && !isFasting && justCompletedPhase !== null
 
   return (
     <div className="flex flex-col flex-1">
@@ -78,20 +112,40 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
-        <FastingClock isFasting={isFasting} startTime={startTime} targetDuration={targetDuration} />
+        <FastingClock
+          isFasting={isFasting}
+          startTime={startTime}
+          targetDuration={targetDuration}
+          phase={phase}
+          onTargetReached={eatingWindowEnabled ? handleTargetReached : undefined}
+        />
 
-        {!isFasting && (
+        {!isFasting && !showNextPhaseCta && (
           <DurationSelector duration={duration} setDuration={setDuration} />
         )}
 
-        <button
-          onClick={openConfirm}
-          disabled={!isFasting && !duration}
-          className="w-24 h-24 rounded-full bg-primary-container text-on-primary-container flex flex-col items-center justify-center shadow-float animate-pulse-glow hover:scale-105 active:scale-95 transition-transform duration-300 ease-glide disabled:opacity-50 disabled:animate-none"
-        >
-          {isFasting ? <Square size={20} /> : <Play size={20} />}
-          <span className="font-label-caps text-label-caps mt-1">{isFasting ? 'STOP' : 'START'}</span>
-        </button>
+        {showNextPhaseCta ? (
+          <button
+            onClick={handleStartNextPhase}
+            disabled={isSubmitting}
+            className="px-6 py-3 rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps shadow-float hover:shadow-float-hover transition-shadow disabled:opacity-50"
+          >
+            {isSubmitting
+              ? 'STARTING...'
+              : justCompletedPhase === 'fasting'
+                ? 'START EATING WINDOW'
+                : 'START FAST'}
+          </button>
+        ) : (
+          <button
+            onClick={openConfirm}
+            disabled={!isFasting && !duration}
+            className="w-24 h-24 rounded-full bg-primary-container text-on-primary-container flex flex-col items-center justify-center shadow-float animate-pulse-glow hover:scale-105 active:scale-95 transition-transform duration-300 ease-glide disabled:opacity-50 disabled:animate-none"
+          >
+            {isFasting ? <Square size={20} /> : <Play size={20} />}
+            <span className="font-label-caps text-label-caps mt-1">{isFasting ? 'STOP' : 'START'}</span>
+          </button>
+        )}
       </main>
 
       <Modal isOpen={showConfirm} onClose={closeConfirm} title={isFasting ? 'Stop Fasting' : 'Start Fasting'}>

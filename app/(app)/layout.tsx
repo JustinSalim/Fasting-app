@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (user) {
     const { data } = await supabase
       .from('fasting_logs')
-      .select('id, start_time, target_duration_hours')
+      .select('id, start_time, target_duration_hours, phase')
       .eq('user_id', user.id)
       .eq('status', 'ongoing')
       .single();
