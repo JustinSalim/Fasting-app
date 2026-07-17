@@ -80,8 +80,8 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     stopFast()
   }, [activeFastId, startTime, targetDuration, phase, stopFast])
 
-  const handleStartNextPhase = async () => {
-    const nextPhase = justCompletedPhase === 'fasting' ? 'eating' : 'fasting'
+  const switchToPhase = async (nextPhase: 'fasting' | 'eating') => {
+    if (phase === nextPhase) return
     const nextDuration = nextPhase === 'eating' ? eatingWindowHours : (duration ?? 16)
     setIsSubmitting(true)
     const result = await startFastingLog(nextDuration, nextPhase)
@@ -93,6 +93,8 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     setJustCompletedPhase(null)
     startFast(nextDuration, result.data.id, new Date(result.data.start_time), nextPhase)
   }
+
+  const handleStartNextPhase = () => switchToPhase(justCompletedPhase === 'fasting' ? 'eating' : 'fasting')
 
   const showNextPhaseCta = eatingWindowEnabled && !isFasting && justCompletedPhase !== null
 
@@ -112,6 +114,28 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
+        {eatingWindowEnabled && (
+          <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
+            {(['fasting', 'eating'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => switchToPhase(p)}
+                disabled={isSubmitting || (isFasting && phase === p)}
+                className={`px-5 py-2 rounded-full font-label-caps text-label-caps transition-colors disabled:cursor-default ${
+                  phase === p
+                    ? p === 'eating'
+                      ? 'bg-tertiary text-on-tertiary'
+                      : 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {p === 'fasting' ? 'FASTING' : 'EATING'}
+              </button>
+            ))}
+          </div>
+        )}
+
         <FastingClock
           isFasting={isFasting}
           startTime={startTime}
