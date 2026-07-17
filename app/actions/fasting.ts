@@ -14,7 +14,7 @@ async function getServerSupabase() {
   })
 }
 
-export async function startFastingLog(targetDurationHours: number) {
+export async function startFastingLog(targetDurationHours: number, phase: 'fasting' | 'eating' = 'fasting') {
   const supabase = await getServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
@@ -25,6 +25,7 @@ export async function startFastingLog(targetDurationHours: number) {
     user_id: user.id,
     start_time: new Date().toISOString(),
     target_duration_hours: targetDurationHours,
+    phase,
     status: 'ongoing'
   }).select().single()
 
@@ -42,6 +43,23 @@ export async function updateFastingLog(id: string, status: 'completed' | 'missed
     status,
     end_time: new Date().toISOString()
   }).eq('id', id).eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard', 'layout')
+  return { success: true as const }
+}
+
+export async function completeFastingLogAtTarget(id: string, startTime: string, targetDurationHours: number) {
+  const supabase = await getServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const endTime = new Date(new Date(startTime).getTime() + targetDurationHours * 3600_000).toISOString()
+
+  const { error } = await supabase.from('fasting_logs').update({
+    status: 'completed',
+    end_time: endTime
+  }).eq('id', id).eq('user_id', user.id).eq('status', 'ongoing')
 
   if (error) return { error: error.message }
   revalidatePath('/dashboard', 'layout')
