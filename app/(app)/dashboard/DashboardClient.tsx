@@ -30,8 +30,8 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   // Tracks the phase that just auto-completed, so the dashboard can offer a
   // manual "start the next phase" CTA instead of the normal start/stop button.
   const [justCompletedPhase, setJustCompletedPhase] = React.useState<'fasting' | 'eating' | null>(null)
-  const [showEatingConfirm, setShowEatingConfirm] = React.useState(false)
-  const [eatingHoursInput, setEatingHoursInput] = React.useState(8)
+  const [switchTarget, setSwitchTarget] = React.useState<'fasting' | 'eating' | null>(null)
+  const [switchDuration, setSwitchDuration] = React.useState(8)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
   const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
@@ -99,19 +99,20 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
 
   const handleStartNextPhase = () => switchToPhase(justCompletedPhase === 'fasting' ? 'eating' : 'fasting')
 
-  const openEatingConfirm = () => {
-    setEatingHoursInput(eatingWindowHours)
-    setShowEatingConfirm(true)
+  const openSwitchConfirm = (target: 'fasting' | 'eating') => {
+    setSwitchDuration(target === 'eating' ? eatingWindowHours : (duration ?? 16))
+    setSwitchTarget(target)
   }
 
-  const handleConfirmEating = async () => {
+  const handleConfirmSwitch = async () => {
+    if (!switchTarget) return
     setIsSubmitting(true)
-    if (eatingHoursInput !== eatingWindowHours) {
-      await updateProfile({ eating_window_hours: eatingHoursInput })
+    if (switchTarget === 'eating' && switchDuration !== eatingWindowHours) {
+      await updateProfile({ eating_window_hours: switchDuration })
     }
-    await switchToPhase('eating', eatingHoursInput)
+    await switchToPhase(switchTarget, switchDuration)
     setIsSubmitting(false)
-    setShowEatingConfirm(false)
+    setSwitchTarget(null)
   }
 
   const showNextPhaseCta = eatingWindowEnabled && !isFasting && justCompletedPhase !== null
@@ -138,7 +139,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
               <button
                 key={p}
                 type="button"
-                onClick={() => (p === 'eating' ? openEatingConfirm() : switchToPhase(p))}
+                onClick={() => openSwitchConfirm(p)}
                 disabled={isSubmitting || (isFasting && phase === p)}
                 className={`px-5 py-2 rounded-full font-label-caps text-label-caps transition-colors disabled:cursor-default ${
                   phase === p
@@ -215,33 +216,36 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         </div>
       </Modal>
 
-      <Modal isOpen={showEatingConfirm} onClose={() => setShowEatingConfirm(false)} title="Start Eating Window">
-        <label className="flex flex-col gap-1 mb-6">
-          <span className="font-body-md text-sm text-on-surface-variant">Hours</span>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={eatingHoursInput}
-            onChange={(e) => setEatingHoursInput(Number(e.target.value))}
-            className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+      <Modal
+        isOpen={switchTarget !== null}
+        onClose={() => setSwitchTarget(null)}
+        title={switchTarget === 'eating' ? 'Start Eating Window' : 'Start Fasting'}
+      >
+        <div className="mb-6">
+          <DurationSelector
+            duration={switchDuration}
+            setDuration={setSwitchDuration}
+            presets={switchTarget === 'eating' ? [4, 6, 8, 10] : [12, 14, 16, 18]}
+            maxHours={switchTarget === 'eating' ? 24 : 72}
           />
-        </label>
+        </div>
         {confirmError && (
           <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
         )}
         <div className="flex gap-3">
           <button
-            onClick={() => setShowEatingConfirm(false)}
+            onClick={() => setSwitchTarget(null)}
             disabled={isSubmitting}
             className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
           >
             CANCEL
           </button>
           <button
-            onClick={handleConfirmEating}
-            disabled={isSubmitting || eatingHoursInput < 1 || eatingHoursInput > 24}
-            className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-tertiary text-on-tertiary hover:shadow-float-hover transition-shadow disabled:opacity-50"
+            onClick={handleConfirmSwitch}
+            disabled={isSubmitting}
+            className={`flex-1 py-3 rounded-full font-label-caps text-label-caps hover:shadow-float-hover transition-shadow disabled:opacity-50 ${
+              switchTarget === 'eating' ? 'bg-tertiary text-on-tertiary' : 'bg-primary-container text-on-primary-container'
+            }`}
           >
             {isSubmitting ? 'STARTING...' : 'START'}
           </button>

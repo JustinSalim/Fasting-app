@@ -6,17 +6,19 @@ import { cn } from '@/lib/utils'
 import { formatTargetDuration } from '@/lib/fasting'
 import { Modal } from '@/components/ui/Modal'
 
-const PRESETS = [2, 4, 6, 8]
+const DEFAULT_PRESETS = [2, 4, 6, 8]
 const MINUTE_OPTIONS = [0, 15, 30, 45]
 
 interface DurationSelectorProps {
   duration: number | null
   setDuration: (duration: number) => void
   disabled?: boolean
+  presets?: number[]
+  maxHours?: number
 }
 
-export function DurationSelector({ duration, setDuration, disabled }: DurationSelectorProps) {
-  const isCustom = duration !== null && !PRESETS.includes(duration)
+export function DurationSelector({ duration, setDuration, disabled, presets = DEFAULT_PRESETS, maxHours = 72 }: DurationSelectorProps) {
+  const isCustom = duration !== null && !presets.includes(duration)
   const [showCustom, setShowCustom] = React.useState(false)
   const [customHours, setCustomHours] = React.useState(16)
   const [customMinutes, setCustomMinutes] = React.useState(0)
@@ -30,14 +32,14 @@ export function DurationSelector({ duration, setDuration, disabled }: DurationSe
 
   const confirmCustom = () => {
     const total = customHours + customMinutes / 60
-    if (total >= 1 && total <= 72) setDuration(total)
+    if (total >= 1 && total <= maxHours) setDuration(total)
     setShowCustom(false)
   }
 
   return (
     <>
       <div className="flex items-center justify-start sm:justify-center gap-stack-gap w-full overflow-x-auto pb-4">
-        {PRESETS.map((preset) => (
+        {presets.map((preset) => (
           <button
             key={preset}
             disabled={disabled}
@@ -74,7 +76,7 @@ export function DurationSelector({ duration, setDuration, disabled }: DurationSe
             <input
               type="number"
               min={1}
-              max={72}
+              max={maxHours}
               value={customHours}
               onChange={(e) => setCustomHours(Number(e.target.value))}
               className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
