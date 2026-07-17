@@ -34,6 +34,8 @@ interface ProfileData {
   weight_unit: string | null
   notifications_enabled: boolean | null
   daily_reminder_time: string | null
+  eating_window_enabled: boolean | null
+  eating_window_hours: number | null
 }
 
 export function SettingsClient({ initialProfile }: { initialProfile: ProfileData | null }) {
@@ -52,6 +54,8 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(initialProfile?.notifications_enabled ?? false)
   const [dailyReminderTime, setDailyReminderTime] = React.useState(initialProfile?.daily_reminder_time || '20:00')
   const [notifError, setNotifError] = React.useState<string | null>(null)
+  const [eatingWindowEnabled, setEatingWindowEnabled] = React.useState(initialProfile?.eating_window_enabled ?? false)
+  const [eatingWindowHours, setEatingWindowHours] = React.useState(initialProfile?.eating_window_hours ?? 8)
 
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
@@ -66,6 +70,8 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
       min_fasting_threshold_minutes: threshold,
       reminder_offset_minutes: reminderOffset,
       weight_unit: weightUnit,
+      eating_window_enabled: eatingWindowEnabled,
+      eating_window_hours: eatingWindowHours,
     })
     setIsSaving(false)
     if (!result.success) {
@@ -295,6 +301,36 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
           </label>
         )}
         {notifError && <p className="font-body-md text-sm text-error">{notifError}</p>}
+      </AccordionSection>
+
+      <AccordionSection title="Eating Window">
+        <div className="flex items-center justify-between">
+          <span className="font-body-md text-sm text-on-surface-variant">Track eating window</span>
+          <button
+            type="button"
+            onClick={() => setEatingWindowEnabled((v) => !v)}
+            className={`px-4 py-2 rounded-full font-label-caps text-label-caps ${
+              eatingWindowEnabled
+                ? 'bg-primary-container text-on-primary-container'
+                : 'bg-surface-container text-on-surface-variant'
+            }`}
+          >
+            {eatingWindowEnabled ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        {eatingWindowEnabled && (
+          <label className="flex flex-col gap-1">
+            <span className="font-body-md text-sm text-on-surface-variant">Eating window duration (hours)</span>
+            <input
+              type="number"
+              min={1}
+              max={23}
+              value={eatingWindowHours}
+              onChange={(e) => setEatingWindowHours(Number(e.target.value))}
+              className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+            />
+          </label>
+        )}
       </AccordionSection>
 
       {error && <p className="font-body-md text-sm text-error">{error}</p>}

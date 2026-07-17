@@ -12,7 +12,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, avatar_url, birth_date, reminder_offset_minutes, min_fasting_threshold_minutes, weight_unit, notifications_enabled, daily_reminder_time')
+    .select('full_name, avatar_url, birth_date, reminder_offset_minutes, min_fasting_threshold_minutes, weight_unit, notifications_enabled, daily_reminder_time, eating_window_enabled, eating_window_hours')
     .eq('id', user.id)
     .single()
 

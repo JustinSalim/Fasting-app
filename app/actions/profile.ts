@@ -12,6 +12,8 @@ interface ProfileUpdateFields {
   notifications_enabled?: boolean
   timezone?: string
   daily_reminder_time?: string
+  eating_window_enabled?: boolean
+  eating_window_hours?: number
 }
 
 const ALLOWED_PROFILE_UPDATE_KEYS = [
@@ -23,6 +25,8 @@ const ALLOWED_PROFILE_UPDATE_KEYS = [
   'notifications_enabled',
   'timezone',
   'daily_reminder_time',
+  'eating_window_enabled',
+  'eating_window_hours',
 ] as const satisfies readonly (keyof ProfileUpdateFields)[]
 
 export async function updateProfile(fields: ProfileUpdateFields) {
