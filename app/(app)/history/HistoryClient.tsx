@@ -14,6 +14,7 @@ interface FastingLog {
   end_time: string | null
   target_duration_hours: number
   status: 'completed' | 'missed' | 'partial'
+  phase?: 'fasting' | 'eating'
 }
 
 const containerVariants = {
@@ -42,6 +43,7 @@ function formatDuration(start: string, end: string | null) {
 
 export function HistoryClient({ logs }: { logs: FastingLog[] }) {
   const [selectedLog, setSelectedLog] = React.useState<FastingLog | null>(null)
+  const visibleLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
 
   return (
     <div className="flex flex-col flex-1 px-container-margin py-4 pb-32">
@@ -50,11 +52,11 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
         <p className="font-body-md text-body-md text-on-surface-variant">Your past fasts, saved automatically.</p>
       </header>
 
-      {logs.length === 0 ? (
+      {visibleLogs.length === 0 ? (
         <EmptyState icon={Clock} title="No fasts recorded yet" subtitle="Start your first fast from Home." />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
-          {logs.map((log) => {
+          {visibleLogs.map((log) => {
             const start = parseISO(log.start_time)
             const style = statusStyle[log.status] ?? statusStyle.missed
             const Icon = style.icon

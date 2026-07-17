@@ -12,6 +12,7 @@ export interface FastingLogSummary {
   end_time: string | null
   target_duration_hours: number
   status: 'completed' | 'missed' | 'partial'
+  phase?: 'fasting' | 'eating'
 }
 
 interface FastingTrendsChartProps {
@@ -29,7 +30,8 @@ const barColor: Record<FastingLogSummary['status'], string> = {
 }
 
 export function FastingTrendsChart({ logs, streak, completionRate }: FastingTrendsChartProps) {
-  const recent = [...logs]
+  const recent = logs
+    .filter((log) => (log.phase ?? 'fasting') === 'fasting')
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(-14)
 

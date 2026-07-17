@@ -12,7 +12,7 @@ export default async function HistoryPage() {
 
   const { data: logs } = await supabase
     .from('fasting_logs')
-    .select('id, start_time, end_time, target_duration_hours, status')
+    .select('id, start_time, end_time, target_duration_hours, status, phase')
     .eq('user_id', user.id)
     .neq('status', 'ongoing')
     .order('start_time', { ascending: false })
