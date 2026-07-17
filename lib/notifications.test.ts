@@ -4,7 +4,9 @@ import {
   shouldSendPreGoalReminder,
   isSameLocalDate,
   isWithinReminderWindow,
+  getOverdueOngoingLogs,
   type FastProgress,
+  type OngoingLog,
 } from './notifications'
 
 function fast(overrides: Partial<FastProgress> = {}): FastProgress {
@@ -86,5 +88,34 @@ describe('isWithinReminderWindow', () => {
 
   it('handles the midnight wraparound', () => {
     expect(isWithinReminderWindow('00:05', '23:55', 15)).toBe(true)
+  })
+})
+
+describe('getOverdueOngoingLogs', () => {
+  it('excludes a log that has not yet reached its target', () => {
+    const now = new Date('2026-07-15T14:00:00.000Z') // 6h into an 8h target
+    const logs = [{ id: '1', startTime: '2026-07-15T08:00:00.000Z', targetDurationHours: 8 }]
+    expect(getOverdueOngoingLogs(logs, now)).toEqual([])
+  })
+
+  it('includes a log exactly at its target', () => {
+    const now = new Date('2026-07-15T16:00:00.000Z') // exactly 8h
+    const logs = [{ id: '1', startTime: '2026-07-15T08:00:00.000Z', targetDurationHours: 8 }]
+    expect(getOverdueOngoingLogs(logs, now)).toEqual(logs)
+  })
+
+  it('includes a log past its target', () => {
+    const now = new Date('2026-07-15T20:00:00.000Z') // 12h into an 8h target
+    const logs = [{ id: '1', startTime: '2026-07-15T08:00:00.000Z', targetDurationHours: 8 }]
+    expect(getOverdueOngoingLogs(logs, now)).toEqual(logs)
+  })
+
+  it('filters a mixed list to only the overdue ones', () => {
+    const now = new Date('2026-07-15T16:00:00.000Z')
+    const logs = [
+      { id: 'overdue', startTime: '2026-07-15T08:00:00.000Z', targetDurationHours: 8 },
+      { id: 'not-yet', startTime: '2026-07-15T12:00:00.000Z', targetDurationHours: 8 },
+    ]
+    expect(getOverdueOngoingLogs(logs, now)).toEqual([logs[0]])
   })
 })
