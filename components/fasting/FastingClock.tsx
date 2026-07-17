@@ -10,13 +10,20 @@ interface FastingClockProps {
   isFasting: boolean
   startTime: Date | null
   targetDuration: number | null
+  phase?: 'fasting' | 'eating' | null
+  onTargetReached?: () => void
 }
 
 const RING_RADIUS = 150
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-export function FastingClock({ isFasting, startTime, targetDuration }: FastingClockProps) {
+export function FastingClock({ isFasting, startTime, targetDuration, phase = null, onTargetReached }: FastingClockProps) {
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0)
+  const hasFiredTargetReached = React.useRef(false)
+
+  React.useEffect(() => {
+    hasFiredTargetReached.current = false
+  }, [startTime])
 
   React.useEffect(() => {
     if (!isFasting || !startTime) return
@@ -32,6 +39,21 @@ export function FastingClock({ isFasting, startTime, targetDuration }: FastingCl
   const remainingSeconds = isFasting && targetDuration
     ? getRemainingSeconds(targetDuration, displaySeconds)
     : null
+
+  React.useEffect(() => {
+    if (
+      onTargetReached &&
+      remainingSeconds !== null &&
+      remainingSeconds <= 0 &&
+      !hasFiredTargetReached.current
+    ) {
+      hasFiredTargetReached.current = true
+      onTargetReached()
+    }
+  }, [remainingSeconds, onTargetReached])
+
+  // With onTargetReached wired up, the caller stops the fast/window at target,
+  // so overtime never renders in practice — this guards the display only.
   const isOvertime = remainingSeconds !== null && remainingSeconds < 0
   const clockText = remainingSeconds === null
     ? formatElapsed(displaySeconds)
@@ -40,6 +62,7 @@ export function FastingClock({ isFasting, startTime, targetDuration }: FastingCl
       : formatElapsed(remainingSeconds)
 
   const progress = isFasting && targetDuration ? getProgressFraction(targetDuration, displaySeconds) : 0
+  const isEating = phase === 'eating'
 
   return (
     <div className="relative w-full aspect-square max-w-[320px] rounded-full flex flex-col items-center justify-center shadow-float bg-surface/50 backdrop-blur-md animate-float">
@@ -63,20 +86,20 @@ export function FastingClock({ isFasting, startTime, targetDuration }: FastingCl
           strokeDasharray={RING_CIRCUMFERENCE}
           animate={{ strokeDashoffset: RING_CIRCUMFERENCE * (1 - progress) }}
           transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-          className={isOvertime ? 'stroke-secondary' : 'stroke-primary'}
+          className={isEating ? 'stroke-tertiary' : isOvertime ? 'stroke-secondary' : 'stroke-primary'}
         />
       </svg>
       <div className="font-label-caps text-label-caps text-on-surface-variant mb-2 opacity-70">
-        {isFasting ? 'CURRENT FAST' : 'READY TO FAST'}
+        {isFasting ? (isEating ? 'EATING WINDOW' : 'CURRENT FAST') : 'READY TO FAST'}
       </div>
       <div
         className={`font-display-clock text-display-clock tracking-tighter leading-none mb-1 tabular-nums ${
-          isOvertime ? 'text-secondary' : 'text-primary'
+          isEating ? 'text-tertiary' : isOvertime ? 'text-secondary' : 'text-primary'
         }`}
       >
         {clockText}
       </div>
-      {isFasting && (
+      {isFasting && !isEating && (
         <div className="flex items-center gap-2 mt-4 bg-secondary-container/30 px-4 py-1.5 rounded-full">
           <Flame size={16} className="text-secondary" />
           <span className="font-label-caps text-label-caps text-secondary">

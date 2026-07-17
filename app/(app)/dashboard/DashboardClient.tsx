@@ -56,7 +56,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         setIsSubmitting(false)
         return
       }
-      startFast(duration, result.data.id, new Date(result.data.start_time))
+      startFast(duration, result.data.id, new Date(result.data.start_time), 'fasting')
     }
     setIsSubmitting(false)
     setShowConfirm(false)

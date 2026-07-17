@@ -2,22 +2,26 @@
 
 import React, { createContext, useContext, useState } from 'react'
 
+type Phase = 'fasting' | 'eating'
+
 type FastingContextType = {
   isFasting: boolean
   startTime: Date | null
   targetDuration: number | null
   activeFastId?: string | null
-  startFast: (targetHours: number, id: string, start: Date) => void
+  phase: Phase | null
+  startFast: (targetHours: number, id: string, start: Date, phase: Phase) => void
   stopFast: () => void
 }
 
 const FastingContext = createContext<FastingContextType | undefined>(undefined)
 
-export function FastingProvider({ children, initialFast }: { children: React.ReactNode, initialFast?: { id: string, start_time: string, target_duration_hours: number } | null }) {
+export function FastingProvider({ children, initialFast }: { children: React.ReactNode, initialFast?: { id: string, start_time: string, target_duration_hours: number, phase?: Phase } | null }) {
   const [activeFastId, setActiveFastId] = useState<string | null>(initialFast?.id || null)
   const [isFasting, setIsFasting] = useState(!!initialFast)
   const [startTime, setStartTime] = useState<Date | null>(initialFast ? new Date(initialFast.start_time) : null)
   const [targetDuration, setTargetDuration] = useState<number | null>(initialFast?.target_duration_hours || null)
+  const [phase, setPhase] = useState<Phase | null>(initialFast?.phase ?? (initialFast ? 'fasting' : null))
   const [prevInitialFast, setPrevInitialFast] = useState(initialFast)
 
   // Re-sync local state from `initialFast` when the prop reference changes (e.g. server
@@ -30,13 +34,15 @@ export function FastingProvider({ children, initialFast }: { children: React.Rea
     setActiveFastId(initialFast?.id || null)
     setStartTime(initialFast ? new Date(initialFast.start_time) : null)
     setTargetDuration(initialFast?.target_duration_hours || null)
+    setPhase(initialFast?.phase ?? (initialFast ? 'fasting' : null))
   }
 
-  const startFast = (targetHours: number, id: string, start: Date) => {
+  const startFast = (targetHours: number, id: string, start: Date, startPhase: Phase) => {
     setIsFasting(true)
     setStartTime(start)
     setTargetDuration(targetHours)
     setActiveFastId(id)
+    setPhase(startPhase)
   }
 
   const stopFast = () => {
@@ -44,10 +50,11 @@ export function FastingProvider({ children, initialFast }: { children: React.Rea
     setStartTime(null)
     setTargetDuration(null)
     setActiveFastId(null)
+    setPhase(null)
   }
 
   return (
-    <FastingContext.Provider value={{ isFasting, startTime, targetDuration, activeFastId, startFast, stopFast }}>
+    <FastingContext.Provider value={{ isFasting, startTime, targetDuration, activeFastId, phase, startFast, stopFast }}>
       {children}
     </FastingContext.Provider>
   )
