@@ -8,6 +8,7 @@ import { FastingClock } from '@/components/fasting/FastingClock'
 import { Modal } from '@/components/ui/Modal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { startFastingLog, updateFastingLog, cancelFastingLog, completeFastingLogAtTarget } from '@/app/actions/fasting'
+import { updateProfile } from '@/app/actions/profile'
 import { computeStopOutcome, formatTargetDuration } from '@/lib/fasting'
 
 interface DashboardClientProps {
@@ -29,6 +30,8 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   // Tracks the phase that just auto-completed, so the dashboard can offer a
   // manual "start the next phase" CTA instead of the normal start/stop button.
   const [justCompletedPhase, setJustCompletedPhase] = React.useState<'fasting' | 'eating' | null>(null)
+  const [showEatingConfirm, setShowEatingConfirm] = React.useState(false)
+  const [eatingHoursInput, setEatingHoursInput] = React.useState(8)
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
   const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
@@ -80,9 +83,9 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     stopFast()
   }, [activeFastId, startTime, targetDuration, phase, stopFast])
 
-  const switchToPhase = async (nextPhase: 'fasting' | 'eating') => {
+  const switchToPhase = async (nextPhase: 'fasting' | 'eating', hoursOverride?: number) => {
     if (phase === nextPhase) return
-    const nextDuration = nextPhase === 'eating' ? eatingWindowHours : (duration ?? 16)
+    const nextDuration = nextPhase === 'eating' ? (hoursOverride ?? eatingWindowHours) : (duration ?? 16)
     setIsSubmitting(true)
     const result = await startFastingLog(nextDuration, nextPhase)
     setIsSubmitting(false)
@@ -95,6 +98,21 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   }
 
   const handleStartNextPhase = () => switchToPhase(justCompletedPhase === 'fasting' ? 'eating' : 'fasting')
+
+  const openEatingConfirm = () => {
+    setEatingHoursInput(eatingWindowHours)
+    setShowEatingConfirm(true)
+  }
+
+  const handleConfirmEating = async () => {
+    setIsSubmitting(true)
+    if (eatingHoursInput !== eatingWindowHours) {
+      await updateProfile({ eating_window_hours: eatingHoursInput })
+    }
+    await switchToPhase('eating', eatingHoursInput)
+    setIsSubmitting(false)
+    setShowEatingConfirm(false)
+  }
 
   const showNextPhaseCta = eatingWindowEnabled && !isFasting && justCompletedPhase !== null
 
@@ -120,7 +138,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
               <button
                 key={p}
                 type="button"
-                onClick={() => switchToPhase(p)}
+                onClick={() => (p === 'eating' ? openEatingConfirm() : switchToPhase(p))}
                 disabled={isSubmitting || (isFasting && phase === p)}
                 className={`px-5 py-2 rounded-full font-label-caps text-label-caps transition-colors disabled:cursor-default ${
                   phase === p
@@ -193,6 +211,39 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
             className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-primary-container text-on-primary-container hover:shadow-float-hover transition-shadow disabled:opacity-50"
           >
             {isSubmitting ? 'SAVING...' : isFasting ? 'YES, STOP' : 'YES, START'}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showEatingConfirm} onClose={() => setShowEatingConfirm(false)} title="Start Eating Window">
+        <label className="flex flex-col gap-1 mb-6">
+          <span className="font-body-md text-sm text-on-surface-variant">Hours</span>
+          <input
+            type="number"
+            min={1}
+            max={24}
+            value={eatingHoursInput}
+            onChange={(e) => setEatingHoursInput(Number(e.target.value))}
+            className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+          />
+        </label>
+        {confirmError && (
+          <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowEatingConfirm(false)}
+            disabled={isSubmitting}
+            className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
+          >
+            CANCEL
+          </button>
+          <button
+            onClick={handleConfirmEating}
+            disabled={isSubmitting || eatingHoursInput < 1 || eatingHoursInput > 24}
+            className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-tertiary text-on-tertiary hover:shadow-float-hover transition-shadow disabled:opacity-50"
+          >
+            {isSubmitting ? 'STARTING...' : 'START'}
           </button>
         </div>
       </Modal>
