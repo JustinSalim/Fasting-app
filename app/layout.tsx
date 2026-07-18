@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers";
+import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -25,6 +26,14 @@ export const metadata: Metadata = {
   title: "Fasting",
   description: "A weightless, mindful intermittent fasting tracker",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Fasting",
+  },
+  icons: {
+    apple: "/icon-192x192.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -47,6 +56,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-body-md">
+        <ServiceWorkerRegistration />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
