@@ -51,8 +51,8 @@ export interface StreakLog {
   phase?: 'fasting' | 'eating'
 }
 
-export function getCurrentStreak(logs: StreakLog[], now: Date): number {
-  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
+export function getCurrentStreak(logs: StreakLog[], now: Date, phase: 'fasting' | 'eating' = 'fasting'): number {
+  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === phase)
   const sorted = [...fastingLogs].sort(
     (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
   )
@@ -71,8 +71,8 @@ export function getCurrentStreak(logs: StreakLog[], now: Date): number {
   return streak
 }
 
-export function getCompletionRate(logs: StreakLog[], now: Date, windowDays = 30): number {
-  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
+export function getCompletionRate(logs: StreakLog[], now: Date, windowDays = 30, phase: 'fasting' | 'eating' = 'fasting'): number {
+  const fastingLogs = logs.filter((log) => (log.phase ?? 'fasting') === phase)
   const cutoff = now.getTime() - windowDays * 24 * 60 * 60 * 1000
   const inWindow = fastingLogs.filter((log) => new Date(log.start_time).getTime() >= cutoff)
 

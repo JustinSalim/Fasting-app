@@ -43,17 +43,47 @@ function formatDuration(start: string, end: string | null) {
 
 export function HistoryClient({ logs }: { logs: FastingLog[] }) {
   const [selectedLog, setSelectedLog] = React.useState<FastingLog | null>(null)
-  const visibleLogs = logs.filter((log) => (log.phase ?? 'fasting') === 'fasting')
+  const [viewPhase, setViewPhase] = React.useState<'fasting' | 'eating'>('fasting')
+  const hasEatingLogs = logs.some((log) => log.phase === 'eating')
+  const visibleLogs = logs.filter((log) => (log.phase ?? 'fasting') === viewPhase)
 
   return (
     <div className="flex flex-col flex-1 px-container-margin py-4 pb-32">
-      <header className="mb-6">
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">History</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">Your past fasts, saved automatically.</p>
+      <header className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">History</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Your past {viewPhase === 'eating' ? 'eating windows' : 'fasts'}, saved automatically.
+          </p>
+        </div>
+        {hasEatingLogs && (
+          <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
+            {(['fasting', 'eating'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setViewPhase(p)}
+                className={`px-4 py-2 rounded-full font-label-caps text-label-caps transition-colors ${
+                  viewPhase === p
+                    ? p === 'eating'
+                      ? 'bg-tertiary text-on-tertiary'
+                      : 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {p === 'fasting' ? 'FASTING' : 'EATING'}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {visibleLogs.length === 0 ? (
-        <EmptyState icon={Clock} title="No fasts recorded yet" subtitle="Start your first fast from Home." />
+        <EmptyState
+          icon={Clock}
+          title={`No ${viewPhase === 'eating' ? 'eating windows' : 'fasts'} recorded yet`}
+          subtitle="Start your first fast from Home."
+        />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
           {visibleLogs.map((log) => {
@@ -82,7 +112,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
                       {format(start, 'EEE, d MMM')}
                     </span>
                     <h3 className="font-headline-lg-mobile text-lg font-semibold text-on-surface">
-                      {formatTargetDuration(targetHours)} Fast
+                      {formatTargetDuration(targetHours)} {log.phase === 'eating' ? 'Eating Window' : 'Fast'}
                     </h3>
                   </div>
                   <div className={`p-2 rounded-full ${style.container}`}>
@@ -104,7 +134,7 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
         </motion.div>
       )}
 
-      <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)} title="Fast details">
+      <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)} title={selectedLog?.phase === 'eating' ? 'Eating window details' : 'Fast details'}>
         {selectedLog && (() => {
           const start = parseISO(selectedLog.start_time)
           const end = selectedLog.end_time ? parseISO(selectedLog.end_time) : null

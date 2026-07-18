@@ -19,6 +19,7 @@ interface FastingTrendsChartProps {
   logs: FastingLogSummary[]
   streak: number
   completionRate: number
+  phase?: 'fasting' | 'eating'
 }
 
 const BAR_AREA_HEIGHT = 96
@@ -29,9 +30,9 @@ const barColor: Record<FastingLogSummary['status'], string> = {
   partial: 'bg-tertiary',
 }
 
-export function FastingTrendsChart({ logs, streak, completionRate }: FastingTrendsChartProps) {
+export function FastingTrendsChart({ logs, streak, completionRate, phase = 'fasting' }: FastingTrendsChartProps) {
   const recent = logs
-    .filter((log) => (log.phase ?? 'fasting') === 'fasting')
+    .filter((log) => (log.phase ?? 'fasting') === phase)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(-14)
 
@@ -49,7 +50,11 @@ export function FastingTrendsChart({ logs, streak, completionRate }: FastingTren
       </div>
 
       {recent.length === 0 ? (
-        <EmptyState icon={BarChart3} title="No fasts recorded yet" subtitle="Your trends will show up here." />
+        <EmptyState
+          icon={BarChart3}
+          title={`No ${phase === 'eating' ? 'eating windows' : 'fasts'} recorded yet`}
+          subtitle="Your trends will show up here."
+        />
       ) : (
         <div className="flex items-end gap-1.5" style={{ height: BAR_AREA_HEIGHT }}>
           {recent.map((log) => {

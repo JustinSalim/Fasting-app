@@ -27,6 +27,8 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
   const [weightInput, setWeightInput] = React.useState('')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [viewPhase, setViewPhase] = React.useState<'fasting' | 'eating'>('fasting')
+  const hasEatingLogs = fastingLogs.some((log) => log.phase === 'eating')
 
   const weightEntries: WeightEntry[] = weightLogs
     .map((log) => {
@@ -36,8 +38,8 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
     })
     .filter((entry) => !Number.isNaN(entry.value))
 
-  const streak = getCurrentStreak(fastingLogs, new Date())
-  const completionRate = getCompletionRate(fastingLogs, new Date())
+  const streak = getCurrentStreak(fastingLogs, new Date(), viewPhase)
+  const completionRate = getCompletionRate(fastingLogs, new Date(), 30, viewPhase)
 
   const openAddWeight = () => {
     setError(null)
@@ -65,9 +67,31 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
 
   return (
     <div className="flex flex-col flex-1 px-container-margin py-4 pb-32 gap-4">
-      <header className="mb-2">
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">Stats</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">Your progress over time.</p>
+      <header className="mb-2 flex items-center justify-between">
+        <div>
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">Stats</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">Your progress over time.</p>
+        </div>
+        {hasEatingLogs && (
+          <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
+            {(['fasting', 'eating'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setViewPhase(p)}
+                className={`px-4 py-2 rounded-full font-label-caps text-label-caps transition-colors ${
+                  viewPhase === p
+                    ? p === 'eating'
+                      ? 'bg-tertiary text-on-tertiary'
+                      : 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {p === 'fasting' ? 'FASTING' : 'EATING'}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {weightEntries.length > 0 ? (
@@ -93,7 +117,7 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
         </div>
       )}
 
-      <FastingTrendsChart logs={fastingLogs} streak={streak} completionRate={completionRate} />
+      <FastingTrendsChart logs={fastingLogs} streak={streak} completionRate={completionRate} phase={viewPhase} />
 
       <Modal isOpen={showAddWeight} onClose={() => setShowAddWeight(false)} title="Add weight">
         <input
