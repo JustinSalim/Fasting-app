@@ -8,7 +8,6 @@ import { FastingClock } from '@/components/fasting/FastingClock'
 import { Modal } from '@/components/ui/Modal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { startFastingLog, updateFastingLog, cancelFastingLog, completeFastingLogAtTarget } from '@/app/actions/fasting'
-import { updateProfile } from '@/app/actions/profile'
 import { computeStopOutcome, formatTargetDuration } from '@/lib/fasting'
 
 interface DashboardClientProps {
@@ -30,8 +29,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   // Tracks the phase that just auto-completed, so the dashboard can offer a
   // manual "start the next phase" CTA instead of the normal start/stop button.
   const [justCompletedPhase, setJustCompletedPhase] = React.useState<'fasting' | 'eating' | null>(null)
-  const [switchTarget, setSwitchTarget] = React.useState<'fasting' | 'eating' | null>(null)
-  const [switchDuration, setSwitchDuration] = React.useState(8)
+  const [viewPhase, setViewPhase] = React.useState<'fasting' | 'eating'>('fasting')
 
   const firstName = initialProfile.full_name?.split(' ')[0] || 'there'
   const thresholdMinutes = initialProfile.min_fasting_threshold_minutes ?? 5
@@ -63,14 +61,14 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       }
       stopFast()
     } else if (duration) {
-      const result = await startFastingLog(duration, 'fasting')
+      const result = await startFastingLog(duration, viewPhase)
       if (!result.success) {
         setConfirmError(result.error)
         setIsSubmitting(false)
         return
       }
       setJustCompletedPhase(null)
-      startFast(duration, result.data.id, new Date(result.data.start_time), 'fasting')
+      startFast(duration, result.data.id, new Date(result.data.start_time), viewPhase)
     }
     setIsSubmitting(false)
     setShowConfirm(false)
@@ -83,9 +81,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     stopFast()
   }, [activeFastId, startTime, targetDuration, phase, stopFast])
 
-  const switchToPhase = async (nextPhase: 'fasting' | 'eating', hoursOverride?: number) => {
-    if (phase === nextPhase) return
-    const nextDuration = nextPhase === 'eating' ? (hoursOverride ?? eatingWindowHours) : (duration ?? 16)
+  const startPhase = async (nextPhase: 'fasting' | 'eating', nextDuration: number) => {
     setIsSubmitting(true)
     const result = await startFastingLog(nextDuration, nextPhase)
     setIsSubmitting(false)
@@ -97,25 +93,22 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
     startFast(nextDuration, result.data.id, new Date(result.data.start_time), nextPhase)
   }
 
-  const handleStartNextPhase = () => switchToPhase(justCompletedPhase === 'fasting' ? 'eating' : 'fasting')
-
-  const openSwitchConfirm = (target: 'fasting' | 'eating') => {
-    setSwitchDuration(target === 'eating' ? eatingWindowHours : (duration ?? 16))
-    setSwitchTarget(target)
+  const handleStartNextPhase = () => {
+    const nextPhase = justCompletedPhase === 'fasting' ? 'eating' : 'fasting'
+    startPhase(nextPhase, nextPhase === 'eating' ? eatingWindowHours : (duration ?? 16))
   }
 
-  const handleConfirmSwitch = async () => {
-    if (!switchTarget) return
-    setIsSubmitting(true)
-    if (switchTarget === 'eating' && switchDuration !== eatingWindowHours) {
-      await updateProfile({ eating_window_hours: switchDuration })
-    }
-    await switchToPhase(switchTarget, switchDuration)
-    setIsSubmitting(false)
-    setSwitchTarget(null)
+  const selectViewPhase = (target: 'fasting' | 'eating') => {
+    if (isFasting) return
+    setViewPhase(target)
+    setDuration(target === 'eating' ? eatingWindowHours : 16)
   }
 
   const showNextPhaseCta = eatingWindowEnabled && !isFasting && justCompletedPhase !== null
+
+  React.useEffect(() => {
+    if (isFasting && phase) setViewPhase(phase)
+  }, [isFasting, phase])
 
   return (
     <div className="flex flex-col flex-1">
@@ -135,23 +128,26 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
         {eatingWindowEnabled && (
           <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
-            {(['fasting', 'eating'] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => openSwitchConfirm(p)}
-                disabled={isSubmitting || (isFasting && phase === p)}
-                className={`px-5 py-2 rounded-full font-label-caps text-label-caps transition-colors disabled:cursor-default ${
-                  phase === p
-                    ? p === 'eating'
-                      ? 'bg-tertiary text-on-tertiary'
-                      : 'bg-primary text-on-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container'
-                }`}
-              >
-                {p === 'fasting' ? 'FASTING' : 'EATING'}
-              </button>
-            ))}
+            {(['fasting', 'eating'] as const).map((p) => {
+              const active = isFasting ? phase === p : viewPhase === p
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => selectViewPhase(p)}
+                  disabled={isFasting}
+                  className={`px-5 py-2 rounded-full font-label-caps text-label-caps transition-colors disabled:cursor-default ${
+                    active
+                      ? p === 'eating'
+                        ? 'bg-tertiary text-on-tertiary'
+                        : 'bg-primary text-on-primary'
+                      : 'text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  {p === 'fasting' ? 'FASTING' : 'EATING'}
+                </button>
+              )
+            })}
           </div>
         )}
 
@@ -164,7 +160,12 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         />
 
         {!isFasting && !showNextPhaseCta && (
-          <DurationSelector duration={duration} setDuration={setDuration} />
+          <DurationSelector
+            duration={duration}
+            setDuration={setDuration}
+            presets={viewPhase === 'eating' ? [4, 6, 8, 10] : [12, 14, 16, 18]}
+            maxHours={viewPhase === 'eating' ? 24 : 72}
+          />
         )}
 
         {showNextPhaseCta ? (
@@ -191,9 +192,15 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         )}
       </main>
 
-      <Modal isOpen={showConfirm} onClose={closeConfirm} title={isFasting ? 'Stop Fasting' : 'Start Fasting'}>
+      <Modal
+        isOpen={showConfirm}
+        onClose={closeConfirm}
+        title={isFasting ? (phase === 'eating' ? 'End Eating Window' : 'Stop Fasting') : viewPhase === 'eating' ? 'Start Eating Window' : 'Start Fasting'}
+      >
         <p className="font-body-md text-body-md text-on-surface mb-6">
-          Are you sure you want to {isFasting ? 'stop your current fast' : `start a ${duration ? formatTargetDuration(duration) : ''} fast`}?
+          Are you sure you want to {isFasting
+            ? `stop your current ${phase === 'eating' ? 'eating window' : 'fast'}`
+            : `start a ${duration ? formatTargetDuration(duration) : ''} ${viewPhase === 'eating' ? 'eating window' : 'fast'}`}?
         </p>
         {confirmError && (
           <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
@@ -212,42 +219,6 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
             className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-primary-container text-on-primary-container hover:shadow-float-hover transition-shadow disabled:opacity-50"
           >
             {isSubmitting ? 'SAVING...' : isFasting ? 'YES, STOP' : 'YES, START'}
-          </button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={switchTarget !== null}
-        onClose={() => setSwitchTarget(null)}
-        title={switchTarget === 'eating' ? 'Start Eating Window' : 'Start Fasting'}
-      >
-        <div className="mb-6">
-          <DurationSelector
-            duration={switchDuration}
-            setDuration={setSwitchDuration}
-            presets={switchTarget === 'eating' ? [4, 6, 8, 10] : [12, 14, 16, 18]}
-            maxHours={switchTarget === 'eating' ? 24 : 72}
-          />
-        </div>
-        {confirmError && (
-          <p className="font-body-md text-body-md text-error text-sm px-1 mb-4">{confirmError}</p>
-        )}
-        <div className="flex gap-3">
-          <button
-            onClick={() => setSwitchTarget(null)}
-            disabled={isSubmitting}
-            className="flex-1 py-3 rounded-full font-label-caps text-label-caps bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
-          >
-            CANCEL
-          </button>
-          <button
-            onClick={handleConfirmSwitch}
-            disabled={isSubmitting}
-            className={`flex-1 py-3 rounded-full font-label-caps text-label-caps hover:shadow-float-hover transition-shadow disabled:opacity-50 ${
-              switchTarget === 'eating' ? 'bg-tertiary text-on-tertiary' : 'bg-primary-container text-on-primary-container'
-            }`}
-          >
-            {isSubmitting ? 'STARTING...' : 'START'}
           </button>
         </div>
       </Modal>
