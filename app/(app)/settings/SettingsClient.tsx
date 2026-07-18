@@ -252,7 +252,7 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="font-body-md text-sm text-on-surface-variant">Minimum fasting threshold (minutes)</span>
+          <span className="font-body-md text-sm text-on-surface-variant">Minimum duration to save a fast or eating window (minutes)</span>
           <input
             type="number"
             min={0}

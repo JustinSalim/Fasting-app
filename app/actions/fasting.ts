@@ -19,7 +19,27 @@ export async function startFastingLog(targetDurationHours: number, phase: 'fasti
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  await supabase.from('fasting_logs').update({ status: 'missed', end_time: new Date().toISOString() }).eq('user_id', user.id).eq('status', 'ongoing')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('min_fasting_threshold_minutes')
+    .eq('id', user.id)
+    .single()
+  const thresholdMinutes = profile?.min_fasting_threshold_minutes ?? 5
+
+  const { data: ongoing } = await supabase
+    .from('fasting_logs')
+    .select('id, start_time')
+    .eq('user_id', user.id)
+    .eq('status', 'ongoing')
+
+  for (const log of ongoing ?? []) {
+    const elapsedMinutes = (Date.now() - new Date(log.start_time).getTime()) / 60000
+    if (elapsedMinutes < thresholdMinutes) {
+      await supabase.from('fasting_logs').delete().eq('id', log.id)
+    } else {
+      await supabase.from('fasting_logs').update({ status: 'missed', end_time: new Date().toISOString() }).eq('id', log.id)
+    }
+  }
 
   const { data, error } = await supabase.from('fasting_logs').insert({
     user_id: user.id,
