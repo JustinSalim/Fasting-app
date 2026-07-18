@@ -27,7 +27,7 @@ export function LoginView({ error, message }: LoginViewProps) {
   }
 
   return (
-    <AuthCard icon={Sparkles} title="Antigravity" subtitle="Welcome back to weightless mindfulness.">
+    <AuthCard icon={Sparkles} title="Fasting" subtitle="Welcome back to weightless mindfulness.">
       <form action={login} className="flex flex-col gap-4">
         <input
           name="email"

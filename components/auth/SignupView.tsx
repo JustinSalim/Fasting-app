@@ -11,7 +11,7 @@ interface SignupViewProps {
 
 export function SignupView({ error }: SignupViewProps) {
   return (
-    <AuthCard icon={Sparkles} title="Antigravity" subtitle="Begin your journey of weightless mindfulness.">
+    <AuthCard icon={Sparkles} title="Fasting" subtitle="Begin your journey of weightless mindfulness.">
       <form action={signup} className="flex flex-col gap-4">
         <input
           name="full_name"

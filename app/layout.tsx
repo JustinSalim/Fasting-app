@@ -22,7 +22,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Antigravity",
+  title: "Fasting",
   description: "A weightless, mindful intermittent fasting tracker",
   manifest: "/manifest.json",
 };
