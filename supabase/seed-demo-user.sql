@@ -73,8 +73,15 @@ begin
 
     if fast_status is not null then
       end_ts := start_ts + (elapsed_minutes || ' minutes')::interval;
-      insert into public.fasting_logs (user_id, start_time, end_time, target_duration_hours, status, created_at)
-      values (demo_user_id, start_ts, end_ts, target, fast_status, start_ts);
+      insert into public.fasting_logs (user_id, start_time, end_time, target_duration_hours, status, created_at, phase)
+      values (demo_user_id, start_ts, end_ts, target, fast_status, start_ts, 'fasting');
+
+      -- eating window follows the fast, until the next fast starts ~24h after this one began
+      insert into public.fasting_logs (user_id, start_time, end_time, target_duration_hours, status, created_at, phase)
+      values (
+        demo_user_id, end_ts, start_ts + interval '24 hours',
+        round((24 - target)::numeric, 1), 'completed', end_ts, 'eating'
+      );
     end if;
   end loop;
 

@@ -43,50 +43,21 @@ function formatDuration(start: string, end: string | null) {
 
 export function HistoryClient({ logs }: { logs: FastingLog[] }) {
   const [selectedLog, setSelectedLog] = React.useState<FastingLog | null>(null)
-  const [viewPhase, setViewPhase] = React.useState<'fasting' | 'eating'>('fasting')
-  const hasEatingLogs = logs.some((log) => log.phase === 'eating')
-  const visibleLogs = logs.filter((log) => (log.phase ?? 'fasting') === viewPhase)
 
   return (
     <div className="flex flex-col flex-1 px-container-margin py-4 pb-32">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">History</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Your past {viewPhase === 'eating' ? 'eating windows' : 'fasts'}, saved automatically.
-          </p>
-        </div>
-        {hasEatingLogs && (
-          <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
-            {(['fasting', 'eating'] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setViewPhase(p)}
-                className={`px-4 py-2 rounded-full font-label-caps text-label-caps transition-colors ${
-                  viewPhase === p
-                    ? p === 'eating'
-                      ? 'bg-tertiary text-on-tertiary'
-                      : 'bg-primary text-on-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container'
-                }`}
-              >
-                {p === 'fasting' ? 'FASTING' : 'EATING'}
-              </button>
-            ))}
-          </div>
-        )}
+      <header className="mb-6">
+        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">History</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Your fasting and eating history, saved automatically.
+        </p>
       </header>
 
-      {visibleLogs.length === 0 ? (
-        <EmptyState
-          icon={Clock}
-          title={`No ${viewPhase === 'eating' ? 'eating windows' : 'fasts'} recorded yet`}
-          subtitle="Start your first fast from Home."
-        />
+      {logs.length === 0 ? (
+        <EmptyState icon={Clock} title="No history recorded yet" subtitle="Start your first fast from Home." />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
-          {visibleLogs.map((log) => {
+          {logs.map((log) => {
             const start = parseISO(log.start_time)
             const style = statusStyle[log.status] ?? statusStyle.missed
             const Icon = style.icon
@@ -110,6 +81,13 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
                   <div>
                     <span className="font-label-caps text-label-caps text-on-surface-variant">
                       {format(start, 'EEE, d MMM')}
+                    </span>
+                    <span
+                      className={`ml-2 font-label-caps text-label-caps ${
+                        log.phase === 'eating' ? 'text-tertiary' : 'text-primary'
+                      }`}
+                    >
+                      {log.phase === 'eating' ? 'EATING' : 'FASTING'}
                     </span>
                     <h3 className="font-headline-lg-mobile text-lg font-semibold text-on-surface">
                       {formatTargetDuration(targetHours)} {log.phase === 'eating' ? 'Eating Window' : 'Fast'}
