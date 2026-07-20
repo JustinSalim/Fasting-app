@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { differenceInMinutes, parseISO } from 'date-fns'
+import { differenceInMinutes, format, parseISO } from 'date-fns'
 import { BarChart3 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 
@@ -28,6 +28,12 @@ const barColor: Record<FastingLogSummary['status'], string> = {
   completed: 'bg-secondary',
   missed: 'bg-error',
   partial: 'bg-tertiary',
+}
+
+const statusLabel: Record<FastingLogSummary['status'], string> = {
+  completed: 'Completed',
+  missed: 'Missed',
+  partial: 'Partial',
 }
 
 export function FastingTrendsChart({ logs, streak, completionRate, phase = 'fasting' }: FastingTrendsChartProps) {
@@ -56,24 +62,39 @@ export function FastingTrendsChart({ logs, streak, completionRate, phase = 'fast
           subtitle="Your trends will show up here."
         />
       ) : (
-        <div className="flex items-end gap-1.5" style={{ height: BAR_AREA_HEIGHT }}>
-          {recent.map((log) => {
-            const end = log.end_time ? parseISO(log.end_time) : parseISO(log.start_time)
-            const minutes = differenceInMinutes(end, parseISO(log.start_time))
-            const targetMinutes = Number(log.target_duration_hours) * 60
-            const percent = Math.min(100, Math.round((minutes / targetMinutes) * 100))
-            const heightPx = Math.max((percent / 100) * BAR_AREA_HEIGHT, 4)
-            return (
-              <motion.div
-                key={log.id}
-                initial={{ height: 0 }}
-                animate={{ height: heightPx }}
-                transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-                className={`flex-1 rounded-full ${barColor[log.status]}`}
-              />
-            )
-          })}
-        </div>
+        <>
+          <div className="flex items-end gap-1.5" style={{ height: BAR_AREA_HEIGHT }}>
+            {recent.map((log) => {
+              const end = log.end_time ? parseISO(log.end_time) : parseISO(log.start_time)
+              const minutes = differenceInMinutes(end, parseISO(log.start_time))
+              const targetMinutes = Number(log.target_duration_hours) * 60
+              const percent = Math.min(100, Math.round((minutes / targetMinutes) * 100))
+              const heightPx = Math.max((percent / 100) * BAR_AREA_HEIGHT, 4)
+              return (
+                <motion.div
+                  key={log.id}
+                  initial={{ height: 0 }}
+                  animate={{ height: heightPx }}
+                  transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+                  className={`flex-1 rounded-full ${barColor[log.status]}`}
+                  title={`${statusLabel[log.status]} – ${format(parseISO(log.start_time), 'd MMM')}`}
+                />
+              )
+            })}
+          </div>
+          <div className="flex justify-between mt-2 font-body-md text-xs text-on-surface-variant">
+            <span>{format(parseISO(recent[0].start_time), 'd MMM')}</span>
+            <span>{format(parseISO(recent[recent.length - 1].start_time), 'd MMM')}</span>
+          </div>
+          <div className="flex gap-4 mt-3 pt-3 border-t border-outline-variant/50 dark:border-outline-variant/10">
+            {(Object.keys(statusLabel) as FastingLogSummary['status'][]).map((status) => (
+              <div key={status} className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${barColor[status]}`} />
+                <span className="font-body-md text-xs text-on-surface-variant">{statusLabel[status]}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
