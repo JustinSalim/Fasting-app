@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Bell, BellOff, Play, Square } from 'lucide-react'
+import { Bell, BellOff, Play, Square, Info } from 'lucide-react'
 import { useFasting } from '@/components/fasting/FastingContext'
 import { DurationSelector } from '@/components/fasting/DurationSelector'
 import { FastingClock } from '@/components/fasting/FastingClock'
@@ -23,6 +23,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
   const { isFasting, startTime, targetDuration, activeFastId, phase, startFast, stopFast } = useFasting()
   const [duration, setDuration] = React.useState<number | null>(targetDuration)
   const [showConfirm, setShowConfirm] = React.useState(false)
+  const [showEatingInfo, setShowEatingInfo] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [confirmError, setConfirmError] = React.useState<string | null>(null)
   const [showNotifications, setShowNotifications] = React.useState(false)
@@ -127,6 +128,17 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
 
       <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
         {eatingWindowEnabled && (
+          <button
+            type="button"
+            onClick={() => setShowEatingInfo(true)}
+            className="flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-low px-3 py-1 text-on-surface-variant text-label-caps font-label-caps"
+          >
+            <Info size={14} />
+            FAQ
+          </button>
+        )}
+
+        {eatingWindowEnabled && (
           <div className="flex rounded-full bg-surface-container-low p-1 shadow-float">
             {(['fasting', 'eating'] as const).map((p) => {
               const active = isFasting ? phase === p : viewPhase === p
@@ -225,6 +237,13 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
 
       <Modal isOpen={showNotifications} onClose={() => setShowNotifications(false)} title="Notifications">
         <EmptyState icon={BellOff} title="No notifications yet" subtitle="We'll let you know when there's something new." />
+      </Modal>
+
+      <Modal isOpen={showEatingInfo} onClose={() => setShowEatingInfo(false)} title="FAQ">
+        <p className="text-body text-on-surface-variant">
+          Your eating window is the time between fasts when you can eat. Switch to
+          &quot;EATING&quot; when you break your fast, then back to &quot;FASTING&quot; when your next fast starts.
+        </p>
       </Modal>
     </div>
   )
