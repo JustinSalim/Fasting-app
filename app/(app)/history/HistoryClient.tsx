@@ -17,6 +17,38 @@ interface FastingLog {
   phase?: 'fasting' | 'eating'
 }
 
+interface CycleCard {
+  id: string
+  fasting: FastingLog | null
+  eating: FastingLog | null
+}
+
+// Logs are one row per phase; pair a fasting row with the eating row it
+// directly transitions into (fasting.end_time === eating.start_time) so
+// history shows one card per day instead of two.
+function groupIntoCycles(logs: FastingLog[]): CycleCard[] {
+  const cards: CycleCard[] = []
+  let i = 0
+  while (i < logs.length) {
+    const current = logs[i]
+    const next = logs[i + 1]
+    if (next && next.end_time && current.start_time === next.end_time && current.phase !== next.phase) {
+      const fasting = current.phase === 'eating' ? next : current
+      const eating = current.phase === 'eating' ? current : next
+      cards.push({ id: current.id, fasting, eating })
+      i += 2
+    } else {
+      cards.push({
+        id: current.id,
+        fasting: current.phase === 'eating' ? null : current,
+        eating: current.phase === 'eating' ? current : null,
+      })
+      i += 1
+    }
+  }
+  return cards
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
@@ -42,7 +74,8 @@ function formatDuration(start: string, end: string | null) {
 }
 
 export function HistoryClient({ logs }: { logs: FastingLog[] }) {
-  const [selectedLog, setSelectedLog] = React.useState<FastingLog | null>(null)
+  const [selectedCard, setSelectedCard] = React.useState<CycleCard | null>(null)
+  const cards = React.useMemo(() => groupIntoCycles(logs), [logs])
 
   return (
     <div className="flex flex-col flex-1 px-container-margin py-4 pb-32">
@@ -53,28 +86,21 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
         </p>
       </header>
 
-      {logs.length === 0 ? (
+      {cards.length === 0 ? (
         <EmptyState icon={Clock} title="No history recorded yet" subtitle="Start your first fast from Home." />
       ) : (
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
-          {logs.map((log) => {
-            const start = parseISO(log.start_time)
-            const style = statusStyle[log.status] ?? statusStyle.missed
+          {cards.map((card) => {
+            const primary = card.fasting ?? card.eating!
+            const start = parseISO(primary.start_time)
+            const style = statusStyle[primary.status] ?? statusStyle.missed
             const Icon = style.icon
-
-            const targetHours = Number(log.target_duration_hours) || 16
-
-            let progress = 0
-            if (log.end_time) {
-              const mins = differenceInMinutes(parseISO(log.end_time), start)
-              progress = Math.min(100, Math.round((mins / (targetHours * 60)) * 100))
-            }
 
             return (
               <motion.button
-                key={log.id}
+                key={card.id}
                 variants={itemVariants}
-                onClick={() => setSelectedLog(log)}
+                onClick={() => setSelectedCard(card)}
                 className="text-left bg-surface-container-low p-5 rounded-3xl shadow-float border border-outline-variant/50 dark:border-outline-variant/10 hover:shadow-float-hover active:scale-[0.99] transition-all"
               >
                 <div className="flex justify-between items-start mb-3">
@@ -82,29 +108,30 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
                     <span className="font-label-caps text-label-caps text-on-surface-variant">
                       {format(start, 'EEE, d MMM')}
                     </span>
-                    <span
-                      className={`ml-2 font-label-caps text-label-caps ${
-                        log.phase === 'eating' ? 'text-tertiary' : 'text-primary'
-                      }`}
-                    >
-                      {log.phase === 'eating' ? 'EATING' : 'FASTING'}
-                    </span>
-                    <h3 className="font-headline-lg-mobile text-lg font-semibold text-on-surface">
-                      {formatTargetDuration(targetHours)} {log.phase === 'eating' ? 'Eating Window' : 'Fast'}
-                    </h3>
+                    <h3 className="font-headline-lg-mobile text-lg font-semibold text-on-surface">Daily Cycle</h3>
                   </div>
                   <div className={`p-2 rounded-full ${style.container}`}>
                     <Icon size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
-                <div className="flex items-end gap-2">
-                  <span className="font-body-md text-2xl font-semibold text-on-surface">{formatDuration(log.start_time, log.end_time)}</span>
-                  <span className="font-body-md text-sm text-on-surface-variant mb-1">/ {formatTargetDuration(targetHours)} goal</span>
-                </div>
-
-                <div className="w-full h-2 bg-surface-container-highest rounded-full mt-4 overflow-hidden">
-                  <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${progress}%` }} />
+                <div className="flex gap-3">
+                  {card.fasting && (
+                    <div className="flex-1">
+                      <span className="font-label-caps text-label-caps text-primary">FASTING</span>
+                      <p className="font-body-md text-lg font-semibold text-on-surface">
+                        {formatDuration(card.fasting.start_time, card.fasting.end_time)}
+                      </p>
+                    </div>
+                  )}
+                  {card.eating && (
+                    <div className="flex-1">
+                      <span className="font-label-caps text-label-caps text-tertiary">EATING</span>
+                      <p className="font-body-md text-lg font-semibold text-on-surface">
+                        {formatDuration(card.eating.start_time, card.eating.end_time)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.button>
             )
@@ -112,35 +139,49 @@ export function HistoryClient({ logs }: { logs: FastingLog[] }) {
         </motion.div>
       )}
 
-      <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)} title={selectedLog?.phase === 'eating' ? 'Eating window details' : 'Fast details'}>
-        {selectedLog && (() => {
-          const start = parseISO(selectedLog.start_time)
-          const end = selectedLog.end_time ? parseISO(selectedLog.end_time) : null
-          const style = statusStyle[selectedLog.status] ?? statusStyle.missed
-          const Icon = style.icon
+      <Modal isOpen={!!selectedCard} onClose={() => setSelectedCard(null)} title="Cycle details">
+        {selectedCard && (() => {
+          const phases = [
+            { log: selectedCard.fasting, label: 'Fasting' },
+            { log: selectedCard.eating, label: 'Eating window' },
+          ].filter((p): p is { log: FastingLog; label: string } => !!p.log)
 
           return (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-3 mb-6">
-                <div className={`p-3 rounded-full ${style.container}`}>
-                  <Icon size={24} strokeWidth={2.5} />
-                </div>
-                <div>
-                  <p className="font-body-md font-semibold text-on-surface">{style.label}</p>
-                  <p className="font-body-md text-sm text-on-surface-variant">{format(start, 'MMMM d, yyyy')}</p>
-                </div>
-              </div>
+            <div className="flex flex-col gap-4">
+              {phases.map(({ log, label }) => {
+                const start = parseISO(log.start_time)
+                const end = log.end_time ? parseISO(log.end_time) : null
+                const style = statusStyle[log.status] ?? statusStyle.missed
+                const Icon = style.icon
+                const targetHours = Number(log.target_duration_hours) || 16
 
-              <div className="bg-surface-container rounded-2xl p-4">
-                <div className="flex justify-between mb-2">
-                  <span className="font-body-md text-sm text-on-surface-variant">Started</span>
-                  <span className="font-body-md text-sm font-semibold text-on-surface">{format(start, 'h:mm a')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-body-md text-sm text-on-surface-variant">Ended</span>
-                  <span className="font-body-md text-sm font-semibold text-on-surface">{end ? format(end, 'h:mm a') : 'Ongoing'}</span>
-                </div>
-              </div>
+                return (
+                  <div key={log.id}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-3 rounded-full ${style.container}`}>
+                        <Icon size={24} strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <p className="font-body-md font-semibold text-on-surface">{label} · {style.label}</p>
+                        <p className="font-body-md text-sm text-on-surface-variant">
+                          {format(start, 'MMMM d, yyyy')} · {formatTargetDuration(targetHours)} goal
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-surface-container rounded-2xl p-4">
+                      <div className="flex justify-between mb-2">
+                        <span className="font-body-md text-sm text-on-surface-variant">Started</span>
+                        <span className="font-body-md text-sm font-semibold text-on-surface">{format(start, 'h:mm a')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-body-md text-sm text-on-surface-variant">Ended</span>
+                        <span className="font-body-md text-sm font-semibold text-on-surface">{end ? format(end, 'h:mm a') : 'Ongoing'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )
         })()}
