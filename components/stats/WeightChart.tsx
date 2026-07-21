@@ -59,17 +59,19 @@ export function WeightChart({ entries, unit }: WeightChartProps) {
           className="w-full h-auto overflow-visible cursor-pointer"
           onClick={() => setShowHistory((v) => !v)}
         >
-          <motion.path
-            d={path}
-            fill="none"
-            className="stroke-primary"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
-          />
+          {points.length > 1 && (
+            <motion.path
+              d={path}
+              fill="none"
+              className="stroke-primary"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
+            />
+          )}
           {points.map((p, i) => (
             <g key={p.entry.id}>
               <circle cx={p.x} cy={p.y} r={3} className="fill-primary" />
