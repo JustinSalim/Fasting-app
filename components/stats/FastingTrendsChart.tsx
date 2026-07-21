@@ -63,7 +63,7 @@ export function FastingTrendsChart({ logs, streak, completionRate, phase = 'fast
         />
       ) : (
         <>
-          <div className="flex items-end gap-1.5" style={{ height: BAR_AREA_HEIGHT }}>
+          <div className="flex items-end justify-center gap-1.5" style={{ height: BAR_AREA_HEIGHT }}>
             {recent.map((log) => {
               const end = log.end_time ? parseISO(log.end_time) : parseISO(log.start_time)
               const minutes = differenceInMinutes(end, parseISO(log.start_time))
@@ -76,7 +76,7 @@ export function FastingTrendsChart({ logs, streak, completionRate, phase = 'fast
                   initial={{ height: 0 }}
                   animate={{ height: heightPx }}
                   transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-                  className={`flex-1 rounded-full ${barColor[log.status]}`}
+                  className={`w-4 max-w-[8%] flex-1 rounded-md ${barColor[log.status]}`}
                   title={`${statusLabel[log.status]} – ${format(parseISO(log.start_time), 'd MMM')}`}
                 />
               )
