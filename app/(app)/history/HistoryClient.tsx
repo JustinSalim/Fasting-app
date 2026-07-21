@@ -23,16 +23,18 @@ interface CycleCard {
   eating: FastingLog | null
 }
 
-// Logs are one row per phase; pair a fasting row with the eating row it
-// directly transitions into (fasting.end_time === eating.start_time) so
-// history shows one card per day instead of two.
+// Logs are one row per phase, sorted newest-first. Pair adjacent
+// fasting/eating rows (the eating row a fast transitions into) so
+// history shows one card per cycle instead of two. Timestamps aren't
+// used for pairing since start/end times of adjacent phases are set by
+// separate user actions and rarely match exactly.
 function groupIntoCycles(logs: FastingLog[]): CycleCard[] {
   const cards: CycleCard[] = []
   let i = 0
   while (i < logs.length) {
     const current = logs[i]
     const next = logs[i + 1]
-    if (next && next.end_time && current.start_time === next.end_time && current.phase !== next.phase) {
+    if (next && current.phase !== next.phase) {
       const fasting = current.phase === 'eating' ? next : current
       const eating = current.phase === 'eating' ? current : next
       cards.push({ id: current.id, fasting, eating })
