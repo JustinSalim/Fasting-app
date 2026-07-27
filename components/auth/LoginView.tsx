@@ -43,6 +43,12 @@ export function LoginView({ error, message }: LoginViewProps) {
           placeholder="Password"
           className="w-full bg-surface-container-low/50 hover:bg-surface-container-low focus:bg-surface-container-low transition-colors rounded-xl px-4 py-4 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary-fixed-dim"
         />
+        <Link
+          href="/forgot-password"
+          className="text-right font-body-md text-body-md text-on-surface-variant text-sm px-1 hover:text-primary transition-colors underline decoration-primary/30 underline-offset-4 -mt-2"
+        >
+          Forgot password?
+        </Link>
         {(error || message) && (
           <p className="font-body-md text-body-md text-error text-sm px-1">{error || message}</p>
         )}

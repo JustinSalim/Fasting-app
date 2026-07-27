@@ -16,5 +16,5 @@ export default async function SettingsPage() {
     .eq('id', user.id)
     .single()
 
-  return <SettingsClient initialProfile={profile} />
+  return <SettingsClient initialProfile={profile} email={user.email ?? ''} />
 }

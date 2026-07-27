@@ -7,6 +7,7 @@ import { updateProfile, uploadAvatar } from '@/app/actions/profile'
 import { subscribeToPush, unsubscribeFromPush } from '@/app/actions/push'
 import { signOut } from '@/app/(auth)/actions'
 import { AccordionSection } from '@/components/settings/AccordionSection'
+import { createClient } from '@/utils/supabase/client'
 
 async function toWebp(file: File): Promise<File> {
   const bitmap = await createImageBitmap(file)
@@ -38,7 +39,13 @@ interface ProfileData {
   eating_window_hours: number | null
 }
 
-export function SettingsClient({ initialProfile }: { initialProfile: ProfileData | null }) {
+export function SettingsClient({ initialProfile, email }: { initialProfile: ProfileData | null; email: string }) {
+  const [newPassword, setNewPassword] = React.useState('')
+  const [confirmPassword, setConfirmPassword] = React.useState('')
+  const [passwordError, setPasswordError] = React.useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = React.useState(false)
+  const [isSavingPassword, setIsSavingPassword] = React.useState(false)
+
   const [fullName, setFullName] = React.useState(initialProfile?.full_name || '')
   const [birthDate, setBirthDate] = React.useState(initialProfile?.birth_date || '')
   const [threshold, setThreshold] = React.useState(initialProfile?.min_fasting_threshold_minutes ?? 5)
@@ -159,6 +166,34 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
     if (notificationsEnabled) {
       await updateProfile({ daily_reminder_time: value })
     }
+  }
+
+  const handleChangePassword = async () => {
+    setPasswordError(null)
+    setPasswordSuccess(false)
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match')
+      return
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters')
+      return
+    }
+
+    setIsSavingPassword(true)
+    const supabase = createClient()
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+    setIsSavingPassword(false)
+
+    if (updateError) {
+      setPasswordError(updateError.message)
+      return
+    }
+
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordSuccess(true)
   }
 
   return (
@@ -344,6 +379,42 @@ export function SettingsClient({ initialProfile }: { initialProfile: ProfileData
       </button>
 
       <AccordionSection title="Account">
+        <div className="flex flex-col gap-1">
+          <span className="font-body-md text-sm text-on-surface-variant">Email</span>
+          <div className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface-variant">
+            {email}
+          </div>
+        </div>
+
+        <label className="flex flex-col gap-1">
+          <span className="font-body-md text-sm text-on-surface-variant">New password</span>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-body-md text-sm text-on-surface-variant">Confirm password</span>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="bg-surface-container rounded-2xl px-4 py-3 font-body-md text-body-md text-on-surface"
+          />
+        </label>
+        {passwordError && <p className="font-body-md text-sm text-error">{passwordError}</p>}
+        {passwordSuccess && <p className="font-body-md text-sm text-secondary">Password updated.</p>}
+        <button
+          type="button"
+          onClick={handleChangePassword}
+          disabled={isSavingPassword || !newPassword || !confirmPassword}
+          className="w-full py-3 rounded-full font-label-caps text-label-caps bg-surface-container text-on-surface disabled:opacity-50"
+        >
+          {isSavingPassword ? 'SAVING...' : 'CHANGE PASSWORD'}
+        </button>
+
         <form action={signOut}>
           <button
             type="submit"

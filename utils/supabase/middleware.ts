@@ -33,7 +33,9 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
                       request.nextUrl.pathname.startsWith('/signup') ||
-                      request.nextUrl.pathname.startsWith('/auth')
+                      request.nextUrl.pathname.startsWith('/auth') ||
+                      request.nextUrl.pathname.startsWith('/forgot-password') ||
+                      request.nextUrl.pathname.startsWith('/reset-password')
 
   const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/manifest.json' || request.nextUrl.pathname === '/sw.js' || request.nextUrl.pathname.startsWith('/icon')
 
@@ -50,7 +52,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && user.email_confirmed_at && isAuthRoute) {
+  if (user && user.email_confirmed_at && isAuthRoute && request.nextUrl.pathname !== '/reset-password') {
      const url = request.nextUrl.clone()
      url.pathname = '/dashboard'
      return NextResponse.redirect(url)
