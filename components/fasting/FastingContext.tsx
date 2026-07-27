@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Phase = 'fasting' | 'eating'
 
@@ -23,6 +24,18 @@ export function FastingProvider({ children, initialFast }: { children: React.Rea
   const [targetDuration, setTargetDuration] = useState<number | null>(initialFast?.target_duration_hours || null)
   const [phase, setPhase] = useState<Phase | null>(initialFast?.phase ?? (initialFast ? 'fasting' : null))
   const [prevInitialFast, setPrevInitialFast] = useState(initialFast)
+  const router = useRouter()
+
+  // Server-fetched `initialFast` only updates on navigation. If the tab was
+  // backgrounded (throttled timers, possibly stale session) and regains
+  // focus, force a server re-fetch so state doesn't sit stale.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') router.refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [router])
 
   // Re-sync local state from `initialFast` when the prop reference changes (e.g. server
   // revalidation), without clobbering optimistic updates from startFast/stopFast in between.

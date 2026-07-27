@@ -13,7 +13,7 @@ interface FastingLog {
   start_time: string
   end_time: string | null
   target_duration_hours: number
-  status: 'completed' | 'missed' | 'partial'
+  status: 'completed' | 'missed' | 'partial' | 'ongoing'
   phase?: 'fasting' | 'eating'
 }
 
@@ -65,6 +65,7 @@ const statusStyle = {
   completed: { icon: CheckCircle2, container: 'bg-secondary-container text-on-secondary-container', bar: 'bg-secondary', label: 'Completed' },
   missed: { icon: Flame, container: 'bg-error-container text-on-error-container', bar: 'bg-error', label: 'Missed' },
   partial: { icon: HelpCircle, container: 'bg-tertiary-container text-on-tertiary-container', bar: 'bg-tertiary', label: 'Partial' },
+  ongoing: { icon: Clock, container: 'bg-primary-container text-on-primary-container', bar: 'bg-primary', label: 'Ongoing' },
 } as const
 
 function formatDuration(start: string, end: string | null) {

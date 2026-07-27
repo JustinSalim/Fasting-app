@@ -75,6 +75,7 @@ export function DurationSelector({ duration, setDuration, disabled, presets = DE
             <span className="font-body-md text-sm text-on-surface-variant">Hours</span>
             <input
               type="number"
+              inputMode="numeric"
               min={1}
               max={maxHours}
               value={customHours}

@@ -48,7 +48,7 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
   }
 
   const handleAddWeight = async () => {
-    const parsed = Number(weightInput)
+    const parsed = Number(weightInput.replace(',', '.'))
     if (Number.isNaN(parsed) || parsed <= 0) {
       setError('Enter a valid weight')
       return
@@ -121,7 +121,7 @@ export function StatsClient({ fastingLogs, weightLogs, weightUnit }: StatsClient
 
       <Modal isOpen={showAddWeight} onClose={() => setShowAddWeight(false)} title="Add weight">
         <input
-          type="number"
+          type="text"
           inputMode="decimal"
           value={weightInput}
           onChange={(e) => setWeightInput(e.target.value)}

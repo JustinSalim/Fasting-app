@@ -14,7 +14,6 @@ export default async function HistoryPage() {
     .from('fasting_logs')
     .select('id, start_time, end_time, target_duration_hours, status, phase')
     .eq('user_id', user.id)
-    .neq('status', 'ongoing')
     .order('start_time', { ascending: false })
 
   return <HistoryClient logs={logs || []} />
