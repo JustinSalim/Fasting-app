@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/layout/BottomNav";
+import { SwipeNavigator } from "@/components/layout/SwipeNavigator";
 import { FastingProvider } from "@/components/fasting/FastingContext";
 import { createClient } from "@/utils/supabase/server";
 
@@ -20,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <FastingProvider initialFast={initialFast}>
       <div className="flex flex-col min-h-[100dvh] flex-1 w-full bg-background pb-24">
-        {children}
+        <SwipeNavigator>{children}</SwipeNavigator>
         <BottomNav />
       </div>
     </FastingProvider>
