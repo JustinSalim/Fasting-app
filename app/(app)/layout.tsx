@@ -20,7 +20,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <FastingProvider initialFast={initialFast}>
-      <div className="flex flex-col h-[100dvh] w-full bg-background pb-24">
+      <div
+        className="flex flex-col h-[100dvh] w-full bg-background overflow-y-auto"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
+        }}
+      >
         <SwipeNavigator>{children}</SwipeNavigator>
         <BottomNav />
       </div>
