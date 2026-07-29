@@ -13,12 +13,10 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
   const x = useMotionValue(0)
   const [direction, setDirection] = React.useState(0)
 
-  const handlePanEnd = (_e: PointerEvent, info: PanInfo) => {
+  const handleDragEnd = (_e: PointerEvent, info: PanInfo) => {
+    x.set(0)
     const index = SWIPE_ROUTES.indexOf(pathname)
-    if (index === -1) {
-      x.set(0)
-      return
-    }
+    if (index === -1) return
 
     if (info.offset.x <= -SWIPE_THRESHOLD && index < SWIPE_ROUTES.length - 1) {
       setDirection(1)
@@ -27,7 +25,6 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
       setDirection(-1)
       router.push(SWIPE_ROUTES[index - 1])
     }
-    x.set(0)
   }
 
   return (
@@ -36,11 +33,12 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
         <motion.div
           key={pathname}
           className="flex flex-col flex-1 w-full"
-          style={{ x }}
+          style={{ x, touchAction: 'pan-y' }}
           drag="x"
           dragElastic={0.15}
           dragConstraints={{ left: 0, right: 0 }}
-          onDragEnd={handlePanEnd}
+          dragDirectionLock
+          onDragEnd={handleDragEnd}
           custom={direction}
           initial={{ x: direction * 60, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
