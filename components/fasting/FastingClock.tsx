@@ -65,7 +65,7 @@ export function FastingClock({ isFasting, startTime, targetDuration, phase = nul
   const isEating = phase === 'eating'
 
   return (
-    <div className="relative w-full aspect-square max-w-[320px] rounded-full flex flex-col items-center justify-center shadow-float bg-surface/50 backdrop-blur-md animate-float">
+    <div className="relative w-full aspect-square max-w-[min(320px,42vh)] rounded-full flex flex-col items-center justify-center shadow-float bg-surface/50 backdrop-blur-md animate-float">
       <div className="absolute inset-0 rounded-full border border-surface-tint/5 pointer-events-none" />
       <svg viewBox="0 0 320 320" className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
         <circle

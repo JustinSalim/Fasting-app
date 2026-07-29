@@ -126,7 +126,7 @@ export default function DashboardClient({ initialProfile }: DashboardClientProps
         </button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-container-margin py-section-padding gap-section-padding">
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-container-margin py-4 gap-5">
         {eatingWindowEnabled && (
           <button
             type="button"
