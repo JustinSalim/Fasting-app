@@ -22,6 +22,13 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
   }, [pathname, router])
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // Don't hijack touches that begin inside a horizontally-scrollable element
+    // (e.g. the duration picker), or the swipe-nav fires when you scroll it.
+    let el = e.target as HTMLElement | null
+    while (el && el !== e.currentTarget) {
+      if (el.scrollWidth > el.clientWidth && getComputedStyle(el).overflowX !== 'visible') return
+      el = el.parentElement
+    }
     const t = e.touches[0]
     start.current = { x: t.clientX, y: t.clientY }
   }
