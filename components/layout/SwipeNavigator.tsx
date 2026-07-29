@@ -29,7 +29,7 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex flex-col flex-1 w-full overflow-x-hidden">
-      <AnimatePresence initial={false} mode="popLayout" custom={direction}>
+      <AnimatePresence initial={false} mode="wait" custom={direction}>
         <motion.div
           key={pathname}
           className="flex flex-col flex-1 w-full"
@@ -43,7 +43,7 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
           initial={{ x: direction * 60, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: direction * -60, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 45 }}
         >
           {children}
         </motion.div>
