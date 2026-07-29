@@ -39,6 +39,16 @@ export async function sendPush(
     const statusCode = typeof err === 'object' && err !== null && 'statusCode' in err
       ? (err as { statusCode?: number }).statusCode
       : undefined
+    const body = typeof err === 'object' && err !== null && 'body' in err
+      ? (err as { body?: string }).body
+      : undefined
+    // Push failures were previously swallowed, making delivery bugs invisible.
+    // Log the real status + provider message so they can be diagnosed.
+    console.error('[push] send failed', {
+      host: subscription.endpoint.split('/')[2],
+      statusCode,
+      body,
+    })
     const expired = statusCode === 404 || statusCode === 410
     return { delivered: false, expired }
   }

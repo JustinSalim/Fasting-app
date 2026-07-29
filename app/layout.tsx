@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import { ThemeProvider } from "./providers";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Fasting",
   },
   icons: {
@@ -37,7 +38,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F6F4F0",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf9f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#1A1C23" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -57,6 +61,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-body-md">
+        {/* Paint the correct base canvas before hydration so cold-start
+            doesn't flash the light background then blink to dark. */}
+        <Script id="theme-canvas" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||((t==='system'||!t)&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.style.background=d?'#1A1C23':'#fbf9f5';}catch(e){}})();`}
+        </Script>
         <ServiceWorkerRegistration />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
