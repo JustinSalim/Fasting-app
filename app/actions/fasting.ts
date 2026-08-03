@@ -54,14 +54,28 @@ export async function startFastingLog(targetDurationHours: number, phase: 'fasti
   return { success: true as const, data }
 }
 
-export async function updateFastingLog(id: string, status: 'completed' | 'missed') {
+export async function updateFastingLog(id: string, _status?: 'completed' | 'missed') {
   const supabase = await getServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // Derive completed/missed from real timestamps server-side. The client's
+  // computeStopOutcome can be wrong if the device clock is skewed (a fast
+  // device clock made a 7h fast look like it hit a 16h goal), so never trust
+  // the client-passed status.
+  const { data: log } = await supabase
+    .from('fasting_logs')
+    .select('start_time, target_duration_hours')
+    .eq('id', id).eq('user_id', user.id).single()
+  if (!log) return { error: 'Not found' }
+
+  const now = new Date()
+  const elapsedMinutes = (now.getTime() - new Date(log.start_time).getTime()) / 60000
+  const status = elapsedMinutes >= log.target_duration_hours * 60 ? 'completed' : 'missed'
+
   const { error } = await supabase.from('fasting_logs').update({
     status,
-    end_time: new Date().toISOString()
+    end_time: now.toISOString()
   }).eq('id', id).eq('user_id', user.id)
 
   if (error) return { error: error.message }
@@ -74,11 +88,15 @@ export async function completeFastingLogAtTarget(id: string, startTime: string, 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  const endTime = new Date(new Date(startTime).getTime() + targetDurationHours * 3600_000).toISOString()
+  const targetEnd = new Date(startTime).getTime() + targetDurationHours * 3600_000
+  // Client fires this when it believes the target is reached; a skewed device
+  // clock can trigger it hours early. Only complete if the target has actually
+  // elapsed per server time.
+  if (Date.now() < targetEnd) return { error: 'Target not yet reached' }
 
   const { error } = await supabase.from('fasting_logs').update({
     status: 'completed',
-    end_time: endTime
+    end_time: new Date(targetEnd).toISOString()
   }).eq('id', id).eq('user_id', user.id).eq('status', 'ongoing')
 
   if (error) return { error: error.message }
