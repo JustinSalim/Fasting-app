@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
       ).toISOString()
       await supabase
         .from('fasting_logs')
-        .update({ status: 'completed', end_time: endTime })
+        .update({ status: 'missed', end_time: endTime })
         .eq('id', log.id)
         .eq('status', 'ongoing')
     }
