@@ -28,9 +28,25 @@ export function FastingClock({ isFasting, startTime, targetDuration, phase = nul
   React.useEffect(() => {
     if (!isFasting || !startTime) return
     const tick = () => setElapsedSeconds(differenceInSeconds(new Date(), startTime))
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
+
+    let interval: ReturnType<typeof setInterval> | undefined
+    const start = () => {
+      if (interval) return
+      tick() // resync immediately (covers time elapsed while hidden)
+      interval = setInterval(tick, 1000)
+    }
+    const stop = () => {
+      if (interval) clearInterval(interval)
+      interval = undefined
+    }
+    const onVisibility = () => (document.hidden ? stop() : start())
+
+    if (!document.hidden) start()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [isFasting, startTime])
 
   const displaySeconds = isFasting && startTime ? elapsedSeconds : 0
