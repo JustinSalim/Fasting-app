@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
     .select('id, timezone, daily_reminder_time, reminder_offset_minutes')
     .eq('notifications_enabled', true)
 
+  // ponytail: sequential per-profile with N+1 queries — fine at current scale.
+  // If profile count grows large, batch the fasting_logs/health_logs fetches by
+  // user_id up front instead of querying per profile.
   for (const profile of profiles ?? []) {
     const { data: subscriptions } = await supabase
       .from('push_subscriptions')
@@ -35,12 +38,14 @@ export async function GET(request: NextRequest) {
     if (!subscriptions || subscriptions.length === 0) continue
 
     const send = async (title: string, body: string, url: string) => {
-      for (const sub of subscriptions as (PushSubscriptionRecord & { id: string })[]) {
-        const result = await sendPush(sub, { title, body, url })
-        if (!result.delivered && result.expired) {
-          await supabase.from('push_subscriptions').delete().eq('id', sub.id)
-        }
-      }
+      await Promise.all(
+        (subscriptions as (PushSubscriptionRecord & { id: string })[]).map(async (sub) => {
+          const result = await sendPush(sub, { title, body, url })
+          if (!result.delivered && result.expired) {
+            await supabase.from('push_subscriptions').delete().eq('id', sub.id)
+          }
+        })
+      )
     }
 
     const { data: ongoingFasts } = await supabase
@@ -131,6 +136,10 @@ export async function GET(request: NextRequest) {
       const endTime = new Date(
         new Date(log.startTime).getTime() + log.targetDurationHours * 3600_000
       ).toISOString()
+      // A fast still 'ongoing' past its target means the user never tapped stop —
+      // they abandoned it, so it's 'missed'. This intentionally differs from the
+      // client path (completeFastingLogAtTarget), which writes 'completed' because
+      // it only runs while the app is open and actively finishing at target.
       await supabase
         .from('fasting_logs')
         .update({ status: 'missed', end_time: endTime })
